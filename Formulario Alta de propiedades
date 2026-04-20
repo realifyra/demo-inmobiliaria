@@ -1,0 +1,694 @@
+
+/**
+ * Shortcode:
+ * [chaton_propiedades_form]
+ *
+ * Nota:
+ * - Cambia la URL del webhook en $webhook_url
+ * - Si los slugs de tus roles no son "asesor" y "demo", cámbialos abajo
+ */
+
+if ( ! function_exists('chaton_user_can_manage_properties') ) {
+    function chaton_user_can_manage_properties() {
+        if ( ! is_user_logged_in() ) {
+            return false;
+        }
+
+        $user = wp_get_current_user();
+        $allowed_roles = array('administrator', 'asesor', 'demo');
+
+        if ( empty($user->roles) ) {
+            return false;
+        }
+
+        foreach ( $user->roles as $role ) {
+            if ( in_array($role, $allowed_roles, true) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+if ( ! function_exists('chaton_propiedades_form_shortcode') ) {
+    function chaton_propiedades_form_shortcode() {
+
+        if ( ! is_user_logged_in() ) {
+            $login_url = wp_login_url( get_permalink() );
+            return '<div class="chaton-access-box"><p>Debes iniciar sesión para acceder a este formulario.</p><a class="chaton-btn-primary" href="' . esc_url($login_url) . '">Iniciar sesión</a></div>';
+        }
+
+        if ( ! chaton_user_can_manage_properties() ) {
+            return '<div class="chaton-access-box"><p>Acceso restringido. Solo Administrador, Asesor y Demo pueden dar de alta o modificar propiedades.</p></div>';
+        }
+
+        // IMPORTANTE: reemplaza esta URL con tu webhook real de n8n
+        $webhook_url = 'https://realify-n8n-new.qagjha.easypanel.host/webhook/propiedades-upsert';
+
+        ob_start();
+        ?>
+        <div class="chaton-property-form-wrap">
+            <form id="chaton-property-form" enctype="multipart/form-data" novalidate>
+                
+                <div class="chaton-form-header">
+                    <div>
+                        <span class="chaton-form-badge">Chat On 24/7</span>
+                        <h2>Alta de propiedad</h2>
+                        <p>Registra una propiedad nueva para que quede disponible en tu base y en las automatizaciones.</p>
+                    </div>
+                </div>
+
+                <div class="chaton-form-section">
+                    <h3>1. Datos generales</h3>
+                    <div class="chaton-grid">
+                        <div class="chaton-field">
+                            <label for="property_id">ID Propiedad</label>
+                            <input type="text" id="property_id" name="property_id" placeholder="Ej. PROP-20260412-001" required>
+                        </div>
+
+                        <div class="chaton-field chaton-field-span-2">
+                            <label for="property_name">Nombre Propiedad</label>
+                            <input type="text" id="property_name" name="property_name" placeholder="Ej. Casa moderna en Zapopan" required>
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="property_type">Tipo de Propiedad</label>
+                            <select id="property_type" name="property_type" required>
+                                <option value="">Selecciona...</option>
+                                <option value="Casa">Casa</option>
+                                <option value="Departamento">Departamento</option>
+                                <option value="Terreno">Terreno</option>
+                                <option value="Local">Local</option>
+                                <option value="Oficina">Oficina</option>
+                                <option value="Bodega">Bodega</option>
+                            </select>
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="operation_type">Tipo de Operación</label>
+                            <select id="operation_type" name="operation_type" required>
+                                <option value="">Selecciona...</option>
+                                <option value="Venta">Venta</option>
+                                <option value="Renta">Renta</option>
+                                <option value="Traspaso">Traspaso</option>
+                            </select>
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="property_status">Estatus de la propiedad</label>
+                            <select id="property_status" name="property_status" required>
+                                <option value="">Selecciona...</option>
+                                <option value="Disponible">Disponible</option>
+                                <option value="Apartada">Apartada</option>
+                                <option value="Vendida">Vendida</option>
+                                <option value="Rentada">Rentada</option>
+                                <option value="Inactiva">Inactiva</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chaton-form-section">
+                    <h3>2. Ubicación</h3>
+                    <div class="chaton-grid">
+                        <div class="chaton-field">
+                            <label for="state">Estado</label>
+                            <input type="text" id="state" name="state" placeholder="Ej. Jalisco" required>
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="city">Ciudad / Municipio</label>
+                            <input type="text" id="city" name="city" placeholder="Ej. Zapopan" required>
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="zone">Colonia / Zona</label>
+                            <input type="text" id="zone" name="zone" placeholder="Ej. Valle Real">
+                        </div>
+
+                        <div class="chaton-field chaton-field-span-2">
+                            <label for="address">Dirección</label>
+                            <input type="text" id="address" name="address" placeholder="Ej. Av. Patria 1234, Zapopan, Jalisco" required>
+                        </div>
+
+                        <div class="chaton-field chaton-field-span-3">
+                            <label for="maps_url">Ubicación en Maps</label>
+                            <input type="url" id="maps_url" name="maps_url" placeholder="https://maps.google.com/...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chaton-form-section">
+                    <h3>3. Precio y medidas</h3>
+                    <div class="chaton-grid">
+                        <div class="chaton-field">
+                            <label for="price">Precio</label>
+                            <input type="number" id="price" name="price" step="0.01" min="0" placeholder="Ej. 3850000" required>
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="currency">Moneda</label>
+                            <select id="currency" name="currency" required>
+                                <option value="MXN">MXN</option>
+                                <option value="USD">USD</option>
+                            </select>
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="land_area_m2">Terreno m²</label>
+                            <input type="number" id="land_area_m2" name="land_area_m2" step="0.01" min="0" placeholder="Ej. 250" required>
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="construction_area_m2">Construcción m²</label>
+                            <input type="number" id="construction_area_m2" name="construction_area_m2" step="0.01" min="0" placeholder="Ej. 180" required>
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="frontage_m">Frente mts</label>
+                            <input type="number" id="frontage_m" name="frontage_m" step="0.01" min="0" placeholder="Ej. 10">
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="depth_m">Fondo mts</label>
+                            <input type="number" id="depth_m" name="depth_m" step="0.01" min="0" placeholder="Ej. 25">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chaton-form-section">
+                    <h3>4. Distribución</h3>
+                    <div class="chaton-grid">
+                        <div class="chaton-field">
+                            <label for="bedrooms">Número de habitaciones</label>
+                            <input type="number" id="bedrooms" name="bedrooms" step="1" min="0" placeholder="Ej. 3" required>
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="bathrooms">Número de baños</label>
+                            <input type="number" id="bathrooms" name="bathrooms" step="1" min="0" placeholder="Ej. 2" required>
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="half_bathrooms">Medio baño</label>
+                            <input type="number" id="half_bathrooms" name="half_bathrooms" step="1" min="0" placeholder="Ej. 1">
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="parking_spaces">Lugares de autos</label>
+                            <input type="number" id="parking_spaces" name="parking_spaces" step="1" min="0" placeholder="Ej. 2">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chaton-form-section">
+                    <h3>5. Descripción</h3>
+                    <div class="chaton-grid">
+                        <div class="chaton-field chaton-field-span-3">
+                            <label for="short_description">Descripción corta</label>
+                            <textarea id="short_description" name="short_description" rows="3" placeholder="Breve resumen atractivo de la propiedad..." required></textarea>
+                        </div>
+
+                        <div class="chaton-field chaton-field-span-3">
+                            <label for="full_description">Descripción completa</label>
+                            <textarea id="full_description" name="full_description" rows="6" placeholder="Describe la propiedad con mayor detalle..."></textarea>
+                        </div>
+
+                        <div class="chaton-field chaton-field-span-3">
+                            <label>Amenidades</label>
+                            <div class="chaton-checkboxes">
+                                <label><input type="checkbox" name="amenities[]" value="Alberca"> Alberca</label>
+                                <label><input type="checkbox" name="amenities[]" value="Jardín"> Jardín</label>
+                                <label><input type="checkbox" name="amenities[]" value="Terraza"> Terraza</label>
+                                <label><input type="checkbox" name="amenities[]" value="Roof garden"> Roof garden</label>
+                                <label><input type="checkbox" name="amenities[]" value="Seguridad"> Seguridad</label>
+                                <label><input type="checkbox" name="amenities[]" value="Gimnasio"> Gimnasio</label>
+                                <label><input type="checkbox" name="amenities[]" value="Patio"> Patio</label>
+                                <label><input type="checkbox" name="amenities[]" value="Balcón"> Balcón</label>
+                                <label><input type="checkbox" name="amenities[]" value="Área infantil"> Área infantil</label>
+                                <label><input type="checkbox" name="amenities[]" value="Casa club"> Casa club</label>
+                            </div>
+                        </div>
+
+                        <div class="chaton-field chaton-field-span-3">
+                            <label for="other_amenities">Otras amenidades</label>
+                            <textarea id="other_amenities" name="other_amenities" rows="3" placeholder="Escribe aquí cualquier amenidad adicional..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chaton-form-section">
+                    <h3>6. Multimedia</h3>
+                    <div class="chaton-grid">
+                        <div class="chaton-field chaton-field-span-3">
+                            <label for="main_image">Imagen principal</label>
+                            <input type="file" id="main_image" name="main_image" accept="image/*" required>
+                            <small>Formato recomendado: JPG o PNG.</small>
+                        </div>
+
+                        <div class="chaton-field chaton-field-span-3">
+                            <label for="gallery_images">Galería de imágenes</label>
+                            <input type="file" id="gallery_images" name="gallery_images[]" accept="image/*" multiple>
+                            <small>Puedes seleccionar varias imágenes.</small>
+                        </div>
+
+                        <div class="chaton-field chaton-field-span-3">
+                            <label for="virtual_tour_url">Video / Tour virtual</label>
+                            <input type="url" id="virtual_tour_url" name="virtual_tour_url" placeholder="https://youtube.com/... o enlace del tour virtual">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chaton-form-section">
+                    <h3>7. Control interno</h3>
+                    <div class="chaton-grid">
+                        <div class="chaton-field">
+                            <label for="advisor_name">Asesor responsable</label>
+                            <input type="text" id="advisor_name" name="advisor_name" placeholder="Nombre del asesor">
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="contact_phone">Teléfono de contacto</label>
+                            <input type="text" id="contact_phone" name="contact_phone" placeholder="Ej. 3312345678">
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="created_at">Fecha de alta</label>
+                            <input type="text" id="created_at" name="created_at" readonly>
+                        </div>
+
+                        <div class="chaton-field">
+                            <label for="updated_at">Fecha de actualización</label>
+                            <input type="text" id="updated_at" name="updated_at" readonly>
+                        </div>
+
+                        <div class="chaton-field chaton-field-span-3">
+                            <label for="internal_notes">Observaciones internas</label>
+                            <textarea id="internal_notes" name="internal_notes" rows="4" placeholder="Notas internas, detalles extra, contexto comercial, etc."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chaton-form-actions">
+                    <button type="submit" class="chaton-btn-primary">Guardar propiedad</button>
+                </div>
+
+                <div id="chaton-form-status" class="chaton-form-status"></div>
+            </form>
+        </div>
+
+        <style>
+            .chaton-property-form-wrap {
+                max-width: 1180px;
+                margin: 0 auto;
+                background: #ffffff;
+                border: 1px solid #e8edf3;
+                border-radius: 22px;
+                box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+                padding: 28px;
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            }
+
+            .chaton-access-box {
+                max-width: 760px;
+                margin: 30px auto;
+                background: #ffffff;
+                border: 1px solid #e8edf3;
+                border-radius: 18px;
+                padding: 24px;
+                text-align: center;
+                box-shadow: 0 12px 35px rgba(15, 23, 42, 0.06);
+            }
+
+            .chaton-form-header {
+                margin-bottom: 24px;
+            }
+
+            .chaton-form-header h2 {
+                margin: 10px 0 8px;
+                font-size: 32px;
+                line-height: 1.1;
+                color: #0f172a;
+            }
+
+            .chaton-form-header p {
+                margin: 0;
+                color: #475569;
+                font-size: 15px;
+            }
+
+            .chaton-form-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                background: #ecfeff;
+                color: #0f766e;
+                border: 1px solid #ccfbf1;
+                padding: 7px 12px;
+                border-radius: 999px;
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: .2px;
+            }
+
+            .chaton-form-section {
+                padding: 22px 0;
+                border-top: 1px solid #eef2f7;
+            }
+
+            .chaton-form-section:first-of-type {
+                border-top: none;
+                padding-top: 0;
+            }
+
+            .chaton-form-section h3 {
+                margin: 0 0 16px;
+                font-size: 18px;
+                color: #0f172a;
+            }
+
+            .chaton-grid {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 16px;
+            }
+
+            .chaton-field {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .chaton-field-span-2 {
+                grid-column: span 2;
+            }
+
+            .chaton-field-span-3 {
+                grid-column: 1 / -1;
+            }
+
+            .chaton-field label {
+                font-size: 13px;
+                font-weight: 700;
+                color: #334155;
+            }
+
+            .chaton-field input,
+            .chaton-field select,
+            .chaton-field textarea {
+                width: 100%;
+                border: 1px solid #d9e2ec;
+                border-radius: 12px;
+                padding: 12px 14px;
+                font-size: 14px;
+                color: #0f172a;
+                background: #ffffff;
+                outline: none;
+                transition: border-color .2s ease, box-shadow .2s ease;
+                box-sizing: border-box;
+            }
+
+            .chaton-field input:focus,
+            .chaton-field select:focus,
+            .chaton-field textarea:focus {
+                border-color: #14b8a6;
+                box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.10);
+            }
+
+            .chaton-field small {
+                font-size: 12px;
+                color: #64748b;
+            }
+
+            .chaton-checkboxes {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px 14px;
+                padding: 14px;
+                border: 1px solid #d9e2ec;
+                border-radius: 14px;
+                background: #f8fafc;
+            }
+
+            .chaton-checkboxes label {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 14px;
+                font-weight: 500;
+                color: #334155;
+            }
+
+            .chaton-checkboxes input[type="checkbox"] {
+                width: auto;
+                margin: 0;
+                accent-color: #14b8a6;
+            }
+
+            .chaton-form-actions {
+                display: flex;
+                justify-content: flex-end;
+                margin-top: 24px;
+            }
+
+            .chaton-btn-primary {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 48px;
+                padding: 12px 20px;
+                border-radius: 999px;
+                border: none;
+                background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+                color: #ffffff !important;
+                text-decoration: none !important;
+                font-size: 14px;
+                font-weight: 700;
+                cursor: pointer;
+                box-shadow: 0 10px 22px rgba(20, 184, 166, 0.18);
+                transition: transform .15s ease, box-shadow .15s ease;
+            }
+
+            .chaton-btn-primary:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 14px 26px rgba(20, 184, 166, 0.22);
+            }
+
+            .chaton-form-status {
+                margin-top: 16px;
+                font-size: 14px;
+                font-weight: 600;
+            }
+
+            .chaton-form-status.ok {
+                color: #15803d;
+            }
+
+            .chaton-form-status.error {
+                color: #b91c1c;
+            }
+
+            @media (max-width: 980px) {
+                .chaton-grid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+
+                .chaton-field-span-2,
+                .chaton-field-span-3 {
+                    grid-column: 1 / -1;
+                }
+            }
+
+            @media (max-width: 640px) {
+                .chaton-property-form-wrap {
+                    padding: 18px;
+                    border-radius: 18px;
+                }
+
+                .chaton-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .chaton-checkboxes {
+                    grid-template-columns: 1fr;
+                }
+
+                .chaton-form-header h2 {
+                    font-size: 26px;
+                }
+
+                .chaton-form-actions {
+                    justify-content: stretch;
+                }
+
+                .chaton-btn-primary {
+                    width: 100%;
+                }
+            }
+        </style>
+
+        <script>
+            (function() {
+                const WEBHOOK_URL = <?php echo json_encode($webhook_url); ?>;
+                const form = document.getElementById('chaton-property-form');
+                const statusEl = document.getElementById('chaton-form-status');
+                const propertyIdInput = document.getElementById('property_id');
+                const createdAtInput = document.getElementById('created_at');
+                const updatedAtInput = document.getElementById('updated_at');
+
+                function pad(n) {
+                    return n < 10 ? '0' + n : n;
+                }
+
+                function getNowFormatted() {
+                    const now = new Date();
+                    return now.getFullYear() + '-' +
+                        pad(now.getMonth() + 1) + '-' +
+                        pad(now.getDate()) + ' ' +
+                        pad(now.getHours()) + ':' +
+                        pad(now.getMinutes()) + ':' +
+                        pad(now.getSeconds());
+                }
+
+                function generatePropertyId() {
+                    const now = new Date();
+                    return 'PROP-' +
+                        now.getFullYear().toString() +
+                        pad(now.getMonth() + 1) +
+                        pad(now.getDate()) + '-' +
+                        pad(now.getHours()) +
+                        pad(now.getMinutes()) +
+                        pad(now.getSeconds());
+                }
+
+                function seedDefaults() {
+                    const now = getNowFormatted();
+                    createdAtInput.value = now;
+                    updatedAtInput.value = now;
+
+                    if (!propertyIdInput.value.trim()) {
+                        propertyIdInput.value = generatePropertyId();
+                    }
+                }
+
+                function getCheckedAmenities() {
+                    return Array.from(document.querySelectorAll('input[name="amenities[]"]:checked')).map(el => el.value);
+                }
+
+                seedDefaults();
+
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    statusEl.textContent = '';
+                    statusEl.className = 'chaton-form-status';
+
+                    if (!WEBHOOK_URL || WEBHOOK_URL === 'PON_AQUI_TU_WEBHOOK_DE_N8N') {
+                        statusEl.textContent = 'Falta configurar la URL del webhook de n8n.';
+                        statusEl.classList.add('error');
+                        return;
+                    }
+
+                    updatedAtInput.value = getNowFormatted();
+
+                    const mainImageInput = document.getElementById('main_image');
+                    const galleryInput = document.getElementById('gallery_images');
+
+                    const payload = {
+                        property_id: document.getElementById('property_id').value.trim(),
+                        property_name: document.getElementById('property_name').value.trim(),
+                        property_type: document.getElementById('property_type').value,
+                        operation_type: document.getElementById('operation_type').value,
+                        property_status: document.getElementById('property_status').value,
+
+                        state: document.getElementById('state').value.trim(),
+                        city: document.getElementById('city').value.trim(),
+                        zone: document.getElementById('zone').value.trim(),
+                        address: document.getElementById('address').value.trim(),
+                        maps_url: document.getElementById('maps_url').value.trim(),
+
+                        price: document.getElementById('price').value,
+                        currency: document.getElementById('currency').value,
+                        land_area_m2: document.getElementById('land_area_m2').value,
+                        construction_area_m2: document.getElementById('construction_area_m2').value,
+                        frontage_m: document.getElementById('frontage_m').value,
+                        depth_m: document.getElementById('depth_m').value,
+
+                        bedrooms: document.getElementById('bedrooms').value,
+                        bathrooms: document.getElementById('bathrooms').value,
+                        half_bathrooms: document.getElementById('half_bathrooms').value,
+                        parking_spaces: document.getElementById('parking_spaces').value,
+
+                        short_description: document.getElementById('short_description').value.trim(),
+                        full_description: document.getElementById('full_description').value.trim(),
+                        amenities: getCheckedAmenities(),
+                        other_amenities: document.getElementById('other_amenities').value.trim(),
+
+                        virtual_tour_url: document.getElementById('virtual_tour_url').value.trim(),
+
+                        advisor_name: document.getElementById('advisor_name').value.trim(),
+                        contact_phone: document.getElementById('contact_phone').value.trim(),
+                        internal_notes: document.getElementById('internal_notes').value.trim(),
+                        created_at: document.getElementById('created_at').value.trim(),
+                        updated_at: document.getElementById('updated_at').value.trim(),
+
+                        source: 'wordpress_form_chaton',
+                        site_url: window.location.origin,
+                        submitted_by: '<?php echo esc_js(wp_get_current_user()->user_login); ?>'
+                    };
+
+                    const formData = new FormData();
+                    formData.append('payload', JSON.stringify(payload));
+
+                    if (mainImageInput.files.length > 0) {
+                        formData.append('main_image', mainImageInput.files[0]);
+                    }
+
+                    if (galleryInput.files.length > 0) {
+                        Array.from(galleryInput.files).forEach((file, index) => {
+                            formData.append('gallery_image_' + index, file);
+                        });
+                        formData.append('gallery_count', galleryInput.files.length);
+                    } else {
+                        formData.append('gallery_count', 0);
+                    }
+
+                    try {
+                        statusEl.textContent = 'Enviando propiedad...';
+                        const response = await fetch(WEBHOOK_URL, {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('HTTP ' + response.status);
+                        }
+
+                        statusEl.textContent = '✅ Propiedad enviada correctamente.';
+                        statusEl.classList.add('ok');
+						
+						
+						if (window.chatonPropsReload) {
+    setTimeout(() => {
+        window.chatonPropsReload();
+    }, 1200);
+}
+
+                        form.reset();
+                        seedDefaults();
+
+                    } catch (error) {
+                        console.error(error);
+                        statusEl.textContent = '❌ Ocurrió un error al enviar la propiedad.';
+                        statusEl.classList.add('error');
+                    }
+                });
+            })();
+        </script>
+        <?php
+        return ob_get_clean();
+    }
+}
+
+add_shortcode('chaton_propiedades_form', 'chaton_propiedades_form_shortcode');
