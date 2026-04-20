@@ -1,0 +1,77 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "path": "historial-conversaciones-list",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "84aab9e4-5365-42d7-8263-bb2947d82099",
+      "name": "Webhook",
+      "webhookId": "c42e4ebb-ab2f-47bd-9eaf-4d1e8b10f1d1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA",
+          "mode": "list",
+          "cachedResultName": "demo-inmobiliarias",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1445802237,
+          "mode": "list",
+          "cachedResultName": "historial_conversaciones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit#gid=1445802237"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "b917be45-778d-43c5-b1c4-e081ca9277bb",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "brlgpJUp82pkG28u",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "82915d6284021ae316fa922b02405245da9d230ae25a4604189ab9cf7292c161"
+  }
+}
