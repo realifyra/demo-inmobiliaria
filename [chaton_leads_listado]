@@ -1,0 +1,1237 @@
+
+/**
+ * Shortcode:
+ * [chaton_leads_listado]
+ *
+ * Incluye:
+ * - Tabla responsive de leads
+ * - Filtros por búsqueda, estado, operación, ubicación y tipo de propiedad
+ * - Popup con resumen del lead + conversación completa tipo WhatsApp
+ * - Eliminación fuerte con confirmación escribiendo ELIMINAR
+ * - Integración con webhooks de n8n para listado de leads, historial y eliminación
+ *
+ * IMPORTANTE:
+ * 1) Ajusta las URLs de los webhooks al inicio de la función.
+ * 2) El endpoint de historial debe aceptar client_id y/o telefono por query string.
+ * 3) El endpoint de eliminación debe borrar el lead y su historial cuando reciba delete_history=true.
+ */
+
+if ( ! function_exists('chaton_user_can_manage_properties') ) {
+    function chaton_user_can_manage_properties() {
+        if ( ! is_user_logged_in() ) {
+            return false;
+        }
+
+        $user = wp_get_current_user();
+        $allowed_roles = array('administrator', 'asesor', 'demo');
+
+        if ( empty($user->roles) ) {
+            return false;
+        }
+
+        foreach ( $user->roles as $role ) {
+            if ( in_array($role, $allowed_roles, true) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+if ( ! function_exists('chaton_leads_listado_shortcode') ) {
+    function chaton_leads_listado_shortcode() {
+
+        if ( ! is_user_logged_in() ) {
+            $login_url = wp_login_url( get_permalink() );
+            return '<div class="chaton-access-box"><p>Debes iniciar sesión para ver el listado de leads.</p><a class="chaton-btn-primary" href="' . esc_url($login_url) . '">Iniciar sesión</a></div>';
+        }
+
+        if ( ! chaton_user_can_manage_properties() ) {
+            return '<div class="chaton-access-box"><p>Acceso restringido. Solo Administrador, Asesor y Demo pueden ver este módulo.</p></div>';
+        }
+
+        // IMPORTANTE: cambia estas URLs por las tuyas
+        $leads_endpoint   = 'https://realify-n8n-new.qagjha.easypanel.host/webhook/leads-list';
+        $history_endpoint = 'https://realify-n8n-new.qagjha.easypanel.host/webhook/historial-conversaciones-list';
+        $delete_endpoint  = 'https://realify-n8n-new.qagjha.easypanel.host/webhook/leads-upsert';
+
+        ob_start();
+        ?>
+        <div class="chaton-list-wrap chaton-leads-wrap">
+            <div class="chaton-list-header">
+                <div>
+                    <span class="chaton-list-badge">CRM interno</span>
+                    <h2>Leads registrados</h2>
+                    <p>Consulta, filtra, revisa el resumen y abre la conversación completa de cada lead.</p>
+                </div>
+                <div class="chaton-list-count" id="chaton-leads-count">0 leads</div>
+            </div>
+
+            <div class="chaton-list-toolbar chaton-list-toolbar-advanced">
+                <div class="chaton-search-box">
+                    <input type="text" id="chaton-leads-search" placeholder="Buscar por nombre, teléfono, email, ubicación o resumen...">
+                </div>
+
+                <div class="chaton-filter-box">
+                    <select id="chaton-leads-status-filter">
+                        <option value="">Todos los estados</option>
+                    </select>
+                </div>
+
+                <div class="chaton-filter-box">
+                    <select id="chaton-leads-operation-filter">
+                        <option value="">Todas las operaciones</option>
+                    </select>
+                </div>
+
+                <div class="chaton-filter-box">
+                    <select id="chaton-leads-location-filter">
+                        <option value="">Todas las ubicaciones</option>
+                    </select>
+                </div>
+
+                <div class="chaton-filter-box">
+                    <select id="chaton-leads-type-filter">
+                        <option value="">Todos los tipos</option>
+                    </select>
+                </div>
+
+                <div class="chaton-filter-box">
+                    <button type="button" class="chaton-btn-secondary" id="chaton-leads-refresh">Actualizar listado</button>
+                </div>
+            </div>
+
+            <div id="chaton-leads-status" class="chaton-list-status"></div>
+
+            <div class="chaton-table-wrap">
+                <table class="chaton-props-table chaton-leads-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Lead</th>
+                            <th>Contacto</th>
+                            <th>Operación</th>
+                            <th>Propiedad</th>
+                            <th>Ubicación</th>
+                            <th>Presupuesto</th>
+                            <th>Estado</th>
+                            <th>Última interacción</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="chaton-leads-tbody">
+                        <tr>
+                            <td colspan="10">Cargando leads...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="chaton-cards-grid" id="chaton-leads-cards"></div>
+        </div>
+
+        <div class="chaton-modal-overlay" id="chaton-lead-modal" hidden>
+            <div class="chaton-modal-card chaton-lead-modal-card">
+                <div class="chaton-modal-header">
+                    <div>
+                        <span class="chaton-list-badge">Detalle del lead</span>
+                        <h3 id="chaton-lead-modal-title">Lead</h3>
+                    </div>
+                    <button type="button" class="chaton-modal-close" id="chaton-lead-modal-close">×</button>
+                </div>
+
+                <div class="chaton-modal-body" id="chaton-lead-modal-body">
+                    <div class="chaton-lead-summary-box" id="chaton-lead-summary-box"></div>
+                    <div class="chaton-lead-history-head">
+                        <h4>Conversación completa</h4>
+                        <p>Ordenada del mensaje más nuevo al más antiguo.</p>
+                    </div>
+                    <div class="chaton-wa-thread" id="chaton-wa-thread">
+                        <div class="chaton-wa-loading">Cargando conversación...</div>
+                    </div>
+                </div>
+
+                <div class="chaton-modal-footer">
+                    <button type="button" class="chaton-btn-detail" id="chaton-lead-modal-footer-close">Cerrar</button>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .chaton-list-wrap {
+                max-width: 1280px;
+                margin: 28px auto 0;
+                background: #ffffff;
+                border: 1px solid #e8edf3;
+                border-radius: 22px;
+                box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+                padding: 28px;
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            }
+
+            .chaton-access-box {
+                max-width: 760px;
+                margin: 30px auto;
+                background: #ffffff;
+                border: 1px solid #e8edf3;
+                border-radius: 18px;
+                padding: 24px;
+                text-align: center;
+                box-shadow: 0 12px 35px rgba(15, 23, 42, 0.06);
+            }
+
+            .chaton-list-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 18px;
+                margin-bottom: 20px;
+            }
+
+            .chaton-list-header h2 {
+                margin: 10px 0 8px;
+                font-size: 30px;
+                line-height: 1.1;
+                color: #0f172a;
+            }
+
+            .chaton-list-header p {
+                margin: 0;
+                color: #475569;
+                font-size: 15px;
+            }
+
+            .chaton-list-badge {
+                display: inline-flex;
+                align-items: center;
+                background: #eff6ff;
+                color: #1d4ed8;
+                border: 1px solid #dbeafe;
+                padding: 7px 12px;
+                border-radius: 999px;
+                font-size: 12px;
+                font-weight: 700;
+            }
+
+            .chaton-list-count {
+                white-space: nowrap;
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                color: #0f172a;
+                padding: 10px 14px;
+                border-radius: 999px;
+                font-size: 13px;
+                font-weight: 700;
+            }
+
+            .chaton-list-toolbar {
+                display: grid;
+                gap: 12px;
+                margin-bottom: 18px;
+            }
+
+            .chaton-list-toolbar-advanced {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 12px;
+                align-items: stretch;
+            }
+
+            .chaton-list-toolbar-advanced .chaton-search-box {
+                grid-column: span 2;
+            }
+
+            .chaton-list-toolbar-advanced .chaton-search-box,
+            .chaton-list-toolbar-advanced .chaton-filter-box {
+                min-width: 0;
+            }
+
+            .chaton-search-box input,
+            .chaton-filter-box select,
+            .chaton-filter-box button {
+                width: 100%;
+                min-width: 0;
+                min-height: 46px;
+                border-radius: 12px;
+                padding: 12px 14px;
+                font-size: 14px;
+                box-sizing: border-box;
+                outline: none;
+            }
+
+            .chaton-search-box input,
+            .chaton-filter-box select {
+                border: 1px solid #d9e2ec;
+                color: #0f172a;
+                background: #ffffff;
+            }
+
+            .chaton-search-box input:focus,
+            .chaton-filter-box select:focus {
+                border-color: #14b8a6;
+                box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.10);
+            }
+
+            .chaton-btn-primary,
+            .chaton-btn-secondary,
+            .chaton-btn-danger,
+            .chaton-btn-small,
+            .chaton-btn-detail {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border: none;
+                border-radius: 999px;
+                cursor: pointer;
+                font-weight: 700;
+                text-decoration: none !important;
+                transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+            }
+
+            .chaton-btn-primary {
+                min-height: 48px;
+                padding: 12px 20px;
+                background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+                color: #ffffff !important;
+                box-shadow: 0 10px 22px rgba(20, 184, 166, 0.18);
+            }
+
+            .chaton-btn-secondary {
+                width: 100%;
+                min-height: 46px;
+                padding: 12px 16px;
+                background: #ecfeff;
+                color: #0f766e;
+                border: 1px solid #ccfbf1;
+            }
+
+            .chaton-btn-danger {
+                min-height: 38px;
+                padding: 9px 14px;
+                background: #fef2f2;
+                color: #b91c1c;
+                border: 1px solid #fecaca;
+            }
+
+            .chaton-btn-small {
+                min-height: 38px;
+                padding: 9px 14px;
+                background: #eef2ff;
+                color: #3730a3;
+                border: 1px solid #c7d2fe;
+            }
+
+            .chaton-btn-detail {
+                min-height: 38px;
+                padding: 9px 14px;
+                background: #f8fafc;
+                color: #0f172a;
+                border: 1px solid #e2e8f0;
+            }
+
+            .chaton-btn-secondary:hover,
+            .chaton-btn-danger:hover,
+            .chaton-btn-small:hover,
+            .chaton-btn-detail:hover,
+            .chaton-btn-primary:hover {
+                transform: translateY(-1px);
+            }
+
+            .chaton-list-status {
+                margin-bottom: 14px;
+                font-size: 14px;
+                font-weight: 600;
+            }
+
+            .chaton-list-status.ok { color: #15803d; }
+            .chaton-list-status.error { color: #b91c1c; }
+
+            .chaton-table-wrap {
+                overflow-x: auto;
+                border: 1px solid #edf2f7;
+                border-radius: 18px;
+            }
+
+            .chaton-props-table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 1260px;
+            }
+
+            .chaton-props-table thead th {
+                background: #f8fafc;
+                color: #334155;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: .5px;
+                text-align: left;
+                padding: 14px 12px;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .chaton-props-table tbody td {
+                padding: 14px 12px;
+                border-bottom: 1px solid #eef2f7;
+                vertical-align: top;
+                color: #0f172a;
+                font-size: 14px;
+            }
+
+            .chaton-props-table tbody tr:hover {
+                background: #fcfcfd;
+            }
+
+            .chaton-status-pill {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 999px;
+                padding: 6px 10px;
+                font-size: 12px;
+                font-weight: 700;
+                line-height: 1;
+            }
+
+            .chaton-status-pill.nuevo { background: #eff6ff; color: #1d4ed8; }
+            .chaton-status-pill.calificando { background: #fff7ed; color: #c2410c; }
+            .chaton-status-pill.interesado { background: #ecfdf5; color: #15803d; }
+            .chaton-status-pill.citaagendada { background: #eef2ff; color: #4338ca; }
+            .chaton-status-pill.seguimientohumano { background: #f3e8ff; color: #7e22ce; }
+            .chaton-status-pill.nointeresado { background: #f1f5f9; color: #475569; }
+
+            .chaton-row-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .chaton-cards-grid {
+                display: none;
+                grid-template-columns: 1fr;
+                gap: 14px;
+                margin-top: 16px;
+            }
+
+            .chaton-prop-card {
+                border: 1px solid #e8edf3;
+                border-radius: 18px;
+                background: #ffffff;
+                padding: 18px;
+                box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+            }
+
+            .chaton-prop-card h4 {
+                margin: 0 0 8px;
+                font-size: 18px;
+                color: #0f172a;
+            }
+
+            .chaton-prop-card p {
+                margin: 0 0 8px;
+                color: #475569;
+                font-size: 14px;
+            }
+
+            .chaton-prop-card .chaton-card-meta {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px 12px;
+                margin: 14px 0;
+            }
+
+            .chaton-prop-card .chaton-card-meta div {
+                font-size: 13px;
+                color: #0f172a;
+            }
+
+            .chaton-prop-card .chaton-card-meta strong {
+                display: block;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: .4px;
+                color: #64748b;
+                margin-bottom: 3px;
+            }
+
+            .chaton-card-actions {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                margin-top: 12px;
+            }
+
+            .chaton-modal-overlay[hidden] {
+                display: none !important;
+            }
+
+            .chaton-modal-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.55);
+                z-index: 999999 !important;
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+                overflow-y: auto;
+                padding: 140px 20px 60px;
+            }
+
+            .chaton-modal-card {
+                width: min(980px, 100%);
+                max-height: calc(100dvh - 210px);
+                overflow: auto;
+                background: #ffffff;
+                border-radius: 22px;
+                border: 1px solid #e8edf3;
+                box-shadow: 0 25px 60px rgba(15, 23, 42, 0.20);
+                padding: 24px;
+                margin: 0 auto;
+            }
+
+            .chaton-modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 16px;
+                margin-bottom: 18px;
+                position: sticky;
+                top: 0;
+                background: #ffffff;
+                z-index: 5;
+                padding-bottom: 8px;
+            }
+
+            .chaton-modal-header h3 {
+                margin: 10px 0 0;
+                font-size: 28px;
+                line-height: 1.1;
+                color: #0f172a;
+            }
+
+            .chaton-modal-close {
+                width: 42px;
+                height: 42px;
+                border-radius: 999px;
+                border: 1px solid #e2e8f0;
+                background: #ffffff;
+                color: #0f172a;
+                font-size: 24px;
+                cursor: pointer;
+                flex-shrink: 0;
+            }
+
+            .chaton-modal-body {
+                display: grid;
+                gap: 18px;
+            }
+
+            .chaton-modal-footer {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-top: 20px;
+                padding-top: 14px;
+                border-top: 1px solid #e8edf3;
+                position: sticky;
+                bottom: 0;
+                background: #ffffff;
+                z-index: 5;
+            }
+
+            .chaton-detail-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 14px 18px;
+            }
+
+            .chaton-detail-item {
+                background: #f8fafc;
+                border: 1px solid #e8edf3;
+                border-radius: 14px;
+                padding: 12px 14px;
+            }
+
+            .chaton-detail-item strong {
+                display: block;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: .4px;
+                color: #64748b;
+                margin-bottom: 4px;
+            }
+
+            .chaton-detail-item span,
+            .chaton-detail-item a {
+                font-size: 14px;
+                color: #0f172a;
+                word-break: break-word;
+            }
+
+            .chaton-detail-full {
+                grid-column: 1 / -1;
+            }
+
+            .chaton-lead-summary-box {
+                background: #f8fafc;
+                border: 1px solid #e8edf3;
+                border-radius: 18px;
+                padding: 18px;
+            }
+
+            .chaton-lead-summary-box h4 {
+                margin: 0 0 12px;
+                color: #0f172a;
+                font-size: 18px;
+            }
+
+            .chaton-lead-history-head h4 {
+                margin: 0 0 4px;
+                color: #0f172a;
+                font-size: 20px;
+            }
+
+            .chaton-lead-history-head p {
+                margin: 0;
+                color: #64748b;
+                font-size: 13px;
+            }
+
+            .chaton-wa-thread {
+                display: grid;
+                gap: 12px;
+                padding: 8px 0 2px;
+            }
+
+            .chaton-wa-loading {
+                background: #f8fafc;
+                border: 1px solid #e8edf3;
+                border-radius: 14px;
+                padding: 14px;
+                color: #475569;
+            }
+
+            .chaton-wa-msg {
+                max-width: 80%;
+                border-radius: 18px;
+                padding: 12px 14px;
+                position: relative;
+                border: 1px solid #e2e8f0;
+                box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+            }
+
+            .chaton-wa-msg.entrante {
+                justify-self: flex-start;
+                background: #ffffff;
+                color: #0f172a;
+            }
+
+            .chaton-wa-msg.saliente {
+                justify-self: flex-end;
+                background: #dcfce7;
+                color: #14532d;
+                border-color: #bbf7d0;
+            }
+
+            .chaton-wa-meta {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+                margin-bottom: 6px;
+                font-size: 11px;
+                color: #64748b;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .35px;
+                flex-wrap: wrap;
+            }
+
+            .chaton-wa-text {
+                white-space: pre-wrap;
+                word-break: break-word;
+                line-height: 1.45;
+                font-size: 14px;
+            }
+
+            @media (max-width: 1200px) {
+                .chaton-list-toolbar-advanced {
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                }
+
+                .chaton-list-toolbar-advanced .chaton-search-box {
+                    grid-column: span 3;
+                }
+            }
+
+            @media (max-width: 980px) {
+                .chaton-list-toolbar-advanced {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+
+                .chaton-list-toolbar-advanced .chaton-search-box {
+                    grid-column: span 2;
+                }
+            }
+
+            @media (max-width: 760px) {
+                .chaton-list-wrap {
+                    padding: 18px;
+                    border-radius: 18px;
+                }
+
+                .chaton-list-header {
+                    flex-direction: column;
+                }
+
+                .chaton-list-toolbar-advanced {
+                    grid-template-columns: 1fr;
+                }
+
+                .chaton-list-toolbar-advanced .chaton-search-box {
+                    grid-column: span 1;
+                }
+
+                .chaton-table-wrap {
+                    display: none;
+                }
+
+                .chaton-cards-grid {
+                    display: grid;
+                }
+
+                .chaton-prop-card .chaton-card-meta {
+                    grid-template-columns: 1fr;
+                }
+
+                .chaton-detail-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .chaton-modal-overlay {
+                    padding: 110px 12px 24px;
+                }
+
+                .chaton-modal-card {
+                    padding: 18px;
+                    border-radius: 18px;
+                    max-height: calc(100dvh - 110px);
+                }
+
+                .chaton-modal-header h3 {
+                    font-size: 22px;
+                }
+
+                .chaton-modal-footer {
+                    justify-content: stretch;
+                }
+
+                .chaton-modal-footer .chaton-btn-detail {
+                    width: 100%;
+                }
+
+                .chaton-wa-msg {
+                    max-width: 92%;
+                }
+            }
+        </style>
+
+        <script>
+        (function() {
+            const LEADS_ENDPOINT   = <?php echo json_encode($leads_endpoint); ?>;
+            const HISTORY_ENDPOINT = <?php echo json_encode($history_endpoint); ?>;
+            const DELETE_ENDPOINT  = <?php echo json_encode($delete_endpoint); ?>;
+
+            const searchInput = document.getElementById('chaton-leads-search');
+            const statusFilter = document.getElementById('chaton-leads-status-filter');
+            const operationFilter = document.getElementById('chaton-leads-operation-filter');
+            const locationFilter = document.getElementById('chaton-leads-location-filter');
+            const typeFilter = document.getElementById('chaton-leads-type-filter');
+            const refreshBtn = document.getElementById('chaton-leads-refresh');
+            const tbody = document.getElementById('chaton-leads-tbody');
+            const cards = document.getElementById('chaton-leads-cards');
+            const statusEl = document.getElementById('chaton-leads-status');
+            const countEl = document.getElementById('chaton-leads-count');
+
+            const modal = document.getElementById('chaton-lead-modal');
+            const modalTitle = document.getElementById('chaton-lead-modal-title');
+            const modalClose = document.getElementById('chaton-lead-modal-close');
+            const modalFooterClose = document.getElementById('chaton-lead-modal-footer-close');
+            const summaryBox = document.getElementById('chaton-lead-summary-box');
+            const waThread = document.getElementById('chaton-wa-thread');
+
+            if (modal && modal.parentNode !== document.body) {
+                document.body.appendChild(modal);
+            }
+
+            let allRows = [];
+            let currentLeadRow = null;
+
+            function escapeHtml(str) {
+                return String(str || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function normalizeText(str) {
+                return String(str || '')
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .toLowerCase()
+                    .trim();
+            }
+
+            function pickVal(obj, keys) {
+                for (const key of keys) {
+                    if (typeof obj[key] !== 'undefined' && obj[key] !== null && obj[key] !== '') {
+                        return obj[key];
+                    }
+                }
+                return '';
+            }
+
+            function extractRows(response) {
+                if (Array.isArray(response)) return response;
+                if (response && Array.isArray(response.data)) return response.data;
+                if (response && Array.isArray(response.rows)) return response.rows;
+                if (response && Array.isArray(response.items)) return response.items;
+                return [];
+            }
+
+            function getLeadFieldMap(row) {
+                return {
+                    client_id: pickVal(row, ['ID Cliente', 'client_id', 'id_cliente']),
+                    last_interaction: pickVal(row, ['Fecha y hora ultima interaccion', 'ultima_interaccion', 'updated_at']),
+                    full_name: pickVal(row, ['Nombre Completo', 'nombre_completo', 'name']),
+                    phone: pickVal(row, ['Telefono', 'Teléfono', 'phone', 'telefono']),
+                    email: pickVal(row, ['Email', 'email']),
+                    property_type: pickVal(row, ['Tipo de Propiedad Deseada', 'tipo_propiedad_deseada']),
+                    operation_type: pickVal(row, ['Tipo de Operacion Deseada', 'tipo_operacion_deseada']),
+                    location: pickVal(row, ['Ubicacion deseada', 'ubicacion_deseada']),
+                    budget_min: pickVal(row, ['Presupuesto minimo', 'presupuesto_minimo']),
+                    budget_max: pickVal(row, ['Presupuesto maximo', 'presupuesto_maximo']),
+                    decision_timeline: pickVal(row, ['Plazo para decidir/requerir', 'plazo_para_decidir_requerir']),
+                    size_m2: pickVal(row, ['Tamaño m² Deseado', 'tamano_m2_deseado']),
+                    bedrooms: pickVal(row, ['Num de Habitaciones Deseadas', 'habitaciones_deseadas']),
+                    bathrooms: pickVal(row, ['Num de Baños Deseados', 'banos_deseados']),
+                    half_bathrooms: pickVal(row, ['Num de Medios Baños Deseados', 'medios_banos_deseados']),
+                    parking_spaces: pickVal(row, ['Lugares de Autos Deseados', 'lugares_autos_deseados']),
+                    elevator: pickVal(row, ['Ascensor Deseado (si/no)', 'ascensor_deseado']),
+                    green_area: pickVal(row, ['Area Verde (si/no)', 'area_verde']),
+                    pool: pickVal(row, ['Piscina (si/no)', 'piscina']),
+                    client_status: pickVal(row, ['Estado del Cliente', 'estado_cliente']),
+                    additional_preferences: pickVal(row, ['Preferencias Adicionales', 'preferencias_adicionales']),
+                    conversation_summary: pickVal(row, ['Resumen de conversacion', 'resumen_de_conversacion'])
+                };
+            }
+
+            function getHistoryFieldMap(row) {
+                return {
+                    date_time: pickVal(row, ['Fecha y hora', 'date_time', 'fecha_hora']),
+                    phone: pickVal(row, ['Teléfono', 'Telefono', 'phone', 'telefono']),
+                    direction: pickVal(row, ['Dirección', 'Direccion', 'direction']),
+                    author: pickVal(row, ['Autor', 'author']),
+                    message_type: pickVal(row, ['Tipo de mensaje', 'message_type']),
+                    message: pickVal(row, ['Mensaje', 'message', 'texto']),
+                    instance: pickVal(row, ['Instancia', 'instance'])
+                };
+            }
+
+            function uniqueSortedValues(rows, fieldName) {
+                const values = rows
+                    .map(row => getLeadFieldMap(row)[fieldName])
+                    .filter(Boolean)
+                    .map(v => String(v).trim());
+
+                return [...new Set(values)].sort((a, b) => a.localeCompare(b, 'es'));
+            }
+
+            function populateDynamicFilters() {
+                const statuses = uniqueSortedValues(allRows, 'client_status');
+                const operations = uniqueSortedValues(allRows, 'operation_type');
+                const locations = uniqueSortedValues(allRows, 'location');
+                const types = uniqueSortedValues(allRows, 'property_type');
+
+                statusFilter.innerHTML = '<option value="">Todos los estados</option>' +
+                    statuses.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+
+                operationFilter.innerHTML = '<option value="">Todas las operaciones</option>' +
+                    operations.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+
+                locationFilter.innerHTML = '<option value="">Todas las ubicaciones</option>' +
+                    locations.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+
+                typeFilter.innerHTML = '<option value="">Todos los tipos</option>' +
+                    types.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+            }
+
+            function statusClass(status) {
+                const val = normalizeText(status).replace(/\s+/g, '');
+                if (val === 'nuevo') return 'nuevo';
+                if (val === 'calificando') return 'calificando';
+                if (val === 'interesado') return 'interesado';
+                if (val === 'citaagendada') return 'citaagendada';
+                if (val === 'seguimientohumano') return 'seguimientohumano';
+                return 'nointeresado';
+            }
+
+            function rowMatches(row, term, status, operation, location, type) {
+                const m = getLeadFieldMap(row);
+
+                const haystack = normalizeText([
+                    m.client_id,
+                    m.full_name,
+                    m.phone,
+                    m.email,
+                    m.property_type,
+                    m.operation_type,
+                    m.location,
+                    m.client_status,
+                    m.conversation_summary,
+                    m.additional_preferences
+                ].join(' '));
+
+                const matchesTerm = !term || haystack.includes(term);
+                const matchesStatus = !status || normalizeText(m.client_status) === normalizeText(status);
+                const matchesOperation = !operation || normalizeText(m.operation_type) === normalizeText(operation);
+                const matchesLocation = !location || normalizeText(m.location) === normalizeText(location);
+                const matchesType = !type || normalizeText(m.property_type) === normalizeText(type);
+
+                return matchesTerm && matchesStatus && matchesOperation && matchesLocation && matchesType;
+            }
+
+            function buildBudgetText(m) {
+                if (!m.budget_min && !m.budget_max) return 'No registrado';
+                if (m.budget_min && m.budget_max) return escapeHtml(m.budget_min + ' - ' + m.budget_max);
+                return escapeHtml(m.budget_min || m.budget_max);
+            }
+
+            function renderRows() {
+                const term = normalizeText(searchInput.value);
+                const status = statusFilter.value;
+                const operation = operationFilter.value;
+                const location = locationFilter.value;
+                const type = typeFilter.value;
+
+                const filtered = allRows.filter(row => rowMatches(row, term, status, operation, location, type));
+
+                countEl.textContent = filtered.length + (filtered.length === 1 ? ' lead' : ' leads');
+
+                if (!filtered.length) {
+                    tbody.innerHTML = '<tr><td colspan="10">No se encontraron leads con esos filtros.</td></tr>';
+                    cards.innerHTML = '<div class="chaton-prop-card"><p>No se encontraron leads con esos filtros.</p></div>';
+                    return;
+                }
+
+                tbody.innerHTML = filtered.map((row) => {
+                    const m = getLeadFieldMap(row);
+                    return `
+                        <tr>
+                            <td>${escapeHtml(m.client_id)}</td>
+                            <td>
+                                <strong>${escapeHtml(m.full_name || 'Sin nombre')}</strong>
+                                ${m.conversation_summary ? `<div style="margin-top:4px;color:#64748b;font-size:12px;">${escapeHtml(m.conversation_summary)}</div>` : ''}
+                            </td>
+                            <td>
+                                <div>${escapeHtml(m.phone || 'Sin teléfono')}</div>
+                                ${m.email ? `<div style="margin-top:4px;color:#64748b;font-size:12px;">${escapeHtml(m.email)}</div>` : ''}
+                            </td>
+                            <td>${escapeHtml(m.operation_type || 'No registrada')}</td>
+                            <td>${escapeHtml(m.property_type || 'No registrada')}</td>
+                            <td>${escapeHtml(m.location || 'No registrada')}</td>
+                            <td>${buildBudgetText(m)}</td>
+                            <td><span class="chaton-status-pill ${statusClass(m.client_status)}">${escapeHtml(m.client_status || 'Sin estado')}</span></td>
+                            <td>${escapeHtml(m.last_interaction || 'No registrada')}</td>
+                            <td>
+                                <div class="chaton-row-actions">
+                                    <button type="button" class="chaton-btn-detail chaton-lead-detail-btn" data-client-id="${escapeHtml(m.client_id)}">Ver conversación</button>
+                                    <button type="button" class="chaton-btn-danger chaton-lead-delete-btn" data-client-id="${escapeHtml(m.client_id)}" data-phone="${escapeHtml(m.phone)}">Eliminar</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                cards.innerHTML = filtered.map((row) => {
+                    const m = getLeadFieldMap(row);
+                    return `
+                        <div class="chaton-prop-card">
+                            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+                                <div>
+                                    <h4>${escapeHtml(m.full_name || 'Sin nombre')}</h4>
+                                    <p>${escapeHtml(m.client_id)}</p>
+                                </div>
+                                <span class="chaton-status-pill ${statusClass(m.client_status)}">${escapeHtml(m.client_status || 'Sin estado')}</span>
+                            </div>
+
+                            <div class="chaton-card-meta">
+                                <div><strong>Teléfono</strong>${escapeHtml(m.phone || 'Sin teléfono')}</div>
+                                <div><strong>Email</strong>${escapeHtml(m.email || 'Sin email')}</div>
+                                <div><strong>Operación</strong>${escapeHtml(m.operation_type || 'No registrada')}</div>
+                                <div><strong>Propiedad</strong>${escapeHtml(m.property_type || 'No registrada')}</div>
+                                <div><strong>Ubicación</strong>${escapeHtml(m.location || 'No registrada')}</div>
+                                <div><strong>Presupuesto</strong>${buildBudgetText(m)}</div>
+                                <div><strong>Última interacción</strong>${escapeHtml(m.last_interaction || 'No registrada')}</div>
+                            </div>
+
+                            ${m.conversation_summary ? `<p>${escapeHtml(m.conversation_summary)}</p>` : ''}
+
+                            <div class="chaton-card-actions">
+                                <button type="button" class="chaton-btn-detail chaton-lead-detail-btn" data-client-id="${escapeHtml(m.client_id)}">Ver conversación</button>
+                                <button type="button" class="chaton-btn-danger chaton-lead-delete-btn" data-client-id="${escapeHtml(m.client_id)}" data-phone="${escapeHtml(m.phone)}">Eliminar</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            function buildSummaryHtml(row) {
+                const m = getLeadFieldMap(row);
+                return `
+                    <h4>Resumen del lead</h4>
+                    <div class="chaton-detail-grid">
+                        <div class="chaton-detail-item"><strong>ID Cliente</strong><span>${escapeHtml(m.client_id)}</span></div>
+                        <div class="chaton-detail-item"><strong>Estado del cliente</strong><span>${escapeHtml(m.client_status || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Nombre</strong><span>${escapeHtml(m.full_name || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Teléfono</strong><span>${escapeHtml(m.phone || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Email</strong><span>${escapeHtml(m.email || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Última interacción</strong><span>${escapeHtml(m.last_interaction || 'No registrada')}</span></div>
+                        <div class="chaton-detail-item"><strong>Tipo de operación</strong><span>${escapeHtml(m.operation_type || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Tipo de propiedad</strong><span>${escapeHtml(m.property_type || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Ubicación deseada</strong><span>${escapeHtml(m.location || 'No registrada')}</span></div>
+                        <div class="chaton-detail-item"><strong>Presupuesto</strong><span>${buildBudgetText(m)}</span></div>
+                        <div class="chaton-detail-item"><strong>Tamaño m²</strong><span>${escapeHtml(m.size_m2 || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Habitaciones</strong><span>${escapeHtml(m.bedrooms || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Baños</strong><span>${escapeHtml(m.bathrooms || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Medios baños</strong><span>${escapeHtml(m.half_bathrooms || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Lugares de auto</strong><span>${escapeHtml(m.parking_spaces || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Ascensor</strong><span>${escapeHtml(m.elevator || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Área verde</strong><span>${escapeHtml(m.green_area || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Piscina</strong><span>${escapeHtml(m.pool || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Plazo</strong><span>${escapeHtml(m.decision_timeline || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item chaton-detail-full"><strong>Preferencias adicionales</strong><span>${escapeHtml(m.additional_preferences || 'Sin preferencias registradas')}</span></div>
+                        <div class="chaton-detail-item chaton-detail-full"><strong>Resumen</strong><span>${escapeHtml(m.conversation_summary || 'Sin resumen registrado')}</span></div>
+                    </div>
+                `;
+            }
+
+            function toTimestamp(value) {
+                const parsed = Date.parse(value);
+                return isNaN(parsed) ? 0 : parsed;
+            }
+
+            function renderHistory(rows) {
+                if (!rows.length) {
+                    waThread.innerHTML = '<div class="chaton-wa-loading">No se encontró historial para este lead.</div>';
+                    return;
+                }
+
+                const sorted = rows
+                    .slice()
+                    .sort((a, b) => toTimestamp(getHistoryFieldMap(b).date_time) - toTimestamp(getHistoryFieldMap(a).date_time));
+
+                waThread.innerHTML = sorted.map((row) => {
+                    const m = getHistoryFieldMap(row);
+                    const direction = normalizeText(m.direction);
+                    const bubbleClass = direction === 'saliente' ? 'saliente' : 'entrante';
+                    return `
+                        <div class="chaton-wa-msg ${bubbleClass}">
+                            <div class="chaton-wa-meta">
+                                <span>${escapeHtml(m.author || (bubbleClass === 'saliente' ? 'Liz Ortega' : 'Cliente'))}</span>
+                                <span>${escapeHtml(m.date_time || 'Sin fecha')}</span>
+                                ${m.message_type ? `<span>${escapeHtml(m.message_type)}</span>` : ''}
+                            </div>
+                            <div class="chaton-wa-text">${escapeHtml(m.message || 'Sin mensaje')}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            async function fetchHistoryForLead(row) {
+                const m = getLeadFieldMap(row);
+                const params = new URLSearchParams();
+                if (m.client_id) params.append('client_id', m.client_id);
+                if (m.phone) params.append('telefono', m.phone);
+
+                const url = HISTORY_ENDPOINT + (params.toString() ? ('?' + params.toString()) : '');
+
+                const response = await fetch(url, { method: 'GET' });
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                const json = await response.json();
+                return extractRows(json);
+            }
+
+            async function openLeadDetail(row) {
+                currentLeadRow = row;
+                const m = getLeadFieldMap(row);
+
+                modalTitle.textContent = m.full_name || 'Lead sin nombre';
+                summaryBox.innerHTML = buildSummaryHtml(row);
+                waThread.innerHTML = '<div class="chaton-wa-loading">Cargando conversación...</div>';
+
+                modal.hidden = false;
+                document.body.style.overflow = 'hidden';
+
+                try {
+                    const historyRows = await fetchHistoryForLead(row);
+                    renderHistory(historyRows);
+                } catch (error) {
+                    console.error(error);
+                    waThread.innerHTML = '<div class="chaton-wa-loading">No se pudo cargar la conversación completa.</div>';
+                }
+            }
+
+            function closeLeadDetail() {
+                modal.hidden = true;
+                document.body.style.overflow = '';
+                currentLeadRow = null;
+            }
+
+            async function loadLeads() {
+                statusEl.textContent = '';
+                statusEl.className = 'chaton-list-status';
+
+                if (!LEADS_ENDPOINT || LEADS_ENDPOINT === 'PON_AQUI_TU_WEBHOOK_DE_LEADS') {
+                    tbody.innerHTML = '<tr><td colspan="10">Falta configurar la URL del listado de leads en n8n.</td></tr>';
+                    cards.innerHTML = '<div class="chaton-prop-card"><p>Falta configurar la URL del listado de leads en n8n.</p></div>';
+                    countEl.textContent = '0 leads';
+                    return;
+                }
+
+                try {
+                    tbody.innerHTML = '<tr><td colspan="10">Cargando leads...</td></tr>';
+                    cards.innerHTML = '';
+
+                    const response = await fetch(LEADS_ENDPOINT, { method: 'GET' });
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+
+                    const json = await response.json();
+                    allRows = extractRows(json);
+                    populateDynamicFilters();
+                    renderRows();
+                } catch (error) {
+                    console.error(error);
+                    tbody.innerHTML = '<tr><td colspan="10">Ocurrió un error al cargar el listado de leads.</td></tr>';
+                    cards.innerHTML = '<div class="chaton-prop-card"><p>Ocurrió un error al cargar el listado de leads.</p></div>';
+                    countEl.textContent = '0 leads';
+                    statusEl.textContent = '❌ No se pudo cargar el listado de leads.';
+                    statusEl.className = 'chaton-list-status error';
+                }
+            }
+
+            async function deleteLead(clientId, phone) {
+                if (!clientId) return;
+
+                if (!DELETE_ENDPOINT || DELETE_ENDPOINT === 'PON_AQUI_TU_WEBHOOK_DELETE_DE_LEADS') {
+                    alert('Falta configurar la URL del webhook para eliminar leads.');
+                    return;
+                }
+
+                const typed = window.prompt(
+                    '⚠️ Esta acción eliminará definitivamente el lead y su conversación.\n\nEscriba ELIMINAR para continuar:'
+                );
+
+                if (typed === null) return;
+                if (String(typed).trim().toUpperCase() !== 'ELIMINAR') {
+                    alert('El texto no coincide. El lead no fue eliminado.');
+                    return;
+                }
+
+                try {
+                    statusEl.textContent = 'Eliminando lead...';
+                    statusEl.className = 'chaton-list-status';
+
+                    const response = await fetch(DELETE_ENDPOINT, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            action: 'delete',
+                            client_id: clientId,
+                            telefono: phone || '',
+                            delete_history: true
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+
+                    statusEl.textContent = '✅ Lead eliminado correctamente.';
+                    statusEl.className = 'chaton-list-status ok';
+
+                    if (currentLeadRow) {
+                        const current = getLeadFieldMap(currentLeadRow);
+                        if (String(current.client_id) === String(clientId)) {
+                            closeLeadDetail();
+                        }
+                    }
+
+                    await loadLeads();
+                } catch (error) {
+                    console.error(error);
+                    statusEl.textContent = '❌ No se pudo eliminar el lead.';
+                    statusEl.className = 'chaton-list-status error';
+                }
+            }
+
+            document.addEventListener('click', function(e) {
+                const detailBtn = e.target.closest('.chaton-lead-detail-btn');
+                const deleteBtn = e.target.closest('.chaton-lead-delete-btn');
+
+                if (detailBtn) {
+                    const clientId = detailBtn.getAttribute('data-client-id');
+                    if (clientId) {
+                        const selectedRow = allRows.find(row => String(getLeadFieldMap(row).client_id) === String(clientId));
+                        if (selectedRow) {
+                            openLeadDetail(selectedRow);
+                        }
+                    }
+                }
+
+                if (deleteBtn) {
+                    const clientId = deleteBtn.getAttribute('data-client-id');
+                    const phone = deleteBtn.getAttribute('data-phone');
+                    deleteLead(clientId, phone);
+                }
+
+                if (e.target === modal) {
+                    closeLeadDetail();
+                }
+            });
+
+            if (modalClose) modalClose.addEventListener('click', closeLeadDetail);
+            if (modalFooterClose) modalFooterClose.addEventListener('click', closeLeadDetail);
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal && !modal.hidden) {
+                    closeLeadDetail();
+                }
+            });
+
+            searchInput.addEventListener('input', renderRows);
+            statusFilter.addEventListener('change', renderRows);
+            operationFilter.addEventListener('change', renderRows);
+            locationFilter.addEventListener('change', renderRows);
+            typeFilter.addEventListener('change', renderRows);
+            refreshBtn.addEventListener('click', loadLeads);
+
+            window.chatonLeadsReload = loadLeads;
+
+            loadLeads();
+        })();
+        </script>
+        <?php
+        return ob_get_clean();
+    }
+}
+
+add_shortcode('chaton_leads_listado', 'chaton_leads_listado_shortcode');
