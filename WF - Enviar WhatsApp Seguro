@@ -1,0 +1,704 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "base_url"
+            },
+            {
+              "name": "instance"
+            },
+            {
+              "name": "apikey"
+            },
+            {
+              "name": "number"
+            },
+            {
+              "name": "text"
+            },
+            {
+              "name": "attempt",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -944,
+        -176
+      ],
+      "id": "0fe0e574-718c-4d3e-acf9-9d218f9af7c8",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3979cf1d-514b-49af-842f-6a45a7f9ac89",
+              "name": "base_url",
+              "value": "={{ ($json.base_url || '').toString().replace(/\\/$/, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "da0b1094-9813-4487-a1e8-46bf9267b3f8",
+              "name": "instance",
+              "value": "={{ ($json.instance || '').toString().trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "24f65c01-0d37-47f6-9f0b-e606e1dfe7c0",
+              "name": "apikey",
+              "value": "={{ ($json.apikey || '').toString().trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "022a51d1-517b-432e-b7a2-2f02416c4c06",
+              "name": "number",
+              "value": "={{ ($json.number || '').toString().replace(/@.*/, '').replace(/[^\\d]/g, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "976f94b3-cd09-4bc8-84aa-5a6d3138c24b",
+              "name": "text",
+              "value": "={{ ($json.text || '').toString().trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "6c58089f-4b9b-4996-93ab-69eacc27e31e",
+              "name": "attempt",
+              "value": "={{ Number($json.attempt || 1) }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -736,
+        -176
+      ],
+      "id": "039c7944-39e3-40d9-bca3-87e259296e57",
+      "name": "Normalizar Envío"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e9e75161-6158-4bc3-bf74-36017f0afde6",
+              "leftValue": "={{ \n  JSON.stringify($json).toLowerCase().includes('open') || \n  JSON.stringify($json).toLowerCase().includes('connected')\n}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        176,
+        -192
+      ],
+      "id": "856fa9b4-d284-4e60-bebe-3a274ed32b17",
+      "name": "IF - Instancia conectada"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Contexto Envío Actual').item.json.base_url + '/message/sendText/' + $('Contexto Envío Actual').item.json.instance }}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={{ { apikey: $('Contexto Envío Actual').item.json.apikey, 'Content-Type': 'application/json' } }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  number: $('Contexto Envío Actual').item.json.number,\n  text: $('Contexto Envío Actual').item.json.text\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        480,
+        -352
+      ],
+      "id": "9c389a22-54a8-4e66-b533-743259716733",
+      "name": "Evolution - SendText",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5083f114-2bd7-4ae3-814f-e8f6787e9ed8",
+              "leftValue": "={{ !JSON.stringify($json).toLowerCase().includes('connection closed') &&\n   !JSON.stringify($json).toLowerCase().includes('bad request') &&\n   !JSON.stringify($json).toLowerCase().includes('error') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        688,
+        -352
+      ],
+      "id": "f49ce619-8bc6-47ad-9b1e-9d8ed0911ec5",
+      "name": "IF - Envío OK"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9119c1a8-0cdc-4129-98a5-78bc7e99406e",
+              "leftValue": "={{ $('Normalizar Envío').item.json.text !== '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -480,
+        -176
+      ],
+      "id": "070dbf78-578c-4138-931e-3bcb131c2420",
+      "name": "IF - Hay texto"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a3bf86bc-7649-4011-bb6b-f24f6a35dbb2",
+              "name": "success",
+              "value": "={{ false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "dc335a16-25f4-4ae5-be6e-ef08fa250738",
+              "name": "message",
+              "value": "={{ 'No había texto para enviar' }}",
+              "type": "string"
+            },
+            {
+              "id": "6db4393e-6c12-435b-91e7-7bf1815ad86f",
+              "name": "attempt",
+              "value": "={{ $('Normalizar Envío').item.json.attempt }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -480,
+        64
+      ],
+      "id": "bf55e1f8-5263-4c43-853f-a1ee0d75a821",
+      "name": "Resultado - Sin texto"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $('Contexto Envío Actual').item.json.base_url + '/instance/restart/' + $('Contexto Envío Actual').item.json.instance }}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={{ { apikey: $('Contexto Envío Actual').item.json.apikey } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        480,
+        -128
+      ],
+      "id": "4873fa30-896c-4867-b6cc-43501e4abac8",
+      "name": "Evolution - Restart Instance",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ab80e198-c4d3-48a2-9fa5-b620f0f98c65",
+              "name": "base_url",
+              "value": "={{ $('Contexto Envío Actual').item.json.base_url }}",
+              "type": "string"
+            },
+            {
+              "id": "77dbd20e-c7a1-4ca5-9887-1a93f9585c16",
+              "name": "instance",
+              "value": "={{ $('Contexto Envío Actual').item.json.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "98719da3-3ed2-4ad1-b1bd-99c5829840e5",
+              "name": "apikey",
+              "value": "={{ $('Contexto Envío Actual').item.json.apikey }}",
+              "type": "string"
+            },
+            {
+              "id": "6ceed1b8-054e-4793-9841-b00917cc486c",
+              "name": "number",
+              "value": "={{ $('Contexto Envío Actual').item.json.number }}",
+              "type": "string"
+            },
+            {
+              "id": "686ead09-1a04-4a8d-98e7-831c99941630",
+              "name": "attempt",
+              "value": "={{ Number($('Contexto Envío Actual').item.json.attempt) + 1 }}",
+              "type": "number"
+            },
+            {
+              "id": "057b38f0-97da-4daf-8c85-61d2838d88ff",
+              "name": "text",
+              "value": "={{ $('Contexto Envío Actual').item.json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        848,
+        -128
+      ],
+      "id": "0e06b511-a410-42b6-aab7-0cf253e84554",
+      "name": "Incrementar Intento"
+    },
+    {
+      "parameters": {
+        "amount": 4
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        -128
+      ],
+      "id": "2d752cce-99d7-448b-a3ab-2b2a203fceb6",
+      "name": "Wait - Reconexión",
+      "webhookId": "9b2d5904-f963-4886-9f47-fb5a147bb76f"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b89fd7dc-56f4-40bd-ab50-0ec5611cbc7d",
+              "leftValue": "={{ $('Incrementar Intento').item.json.attempt <= 10 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        512,
+        160
+      ],
+      "id": "d513fbec-a692-460b-9cba-cbb3cc7a6cfe",
+      "name": "IF - Intentos restantes"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9f13a54d-c78b-420a-8acd-cddfc4a97bfc",
+              "name": "success",
+              "value": "={{ false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "225170ac-1633-4640-ada9-8a50513c37e4",
+              "name": "message",
+              "value": "={{ 'No se pudo enviar el mensaje después de varios intentos' }}",
+              "type": "string"
+            },
+            {
+              "id": "f31586c3-e6b0-4f07-8ff9-d8487159b6b9",
+              "name": "attempt",
+              "value": "={{ $('Incrementar Intento').item.json.attempt }}",
+              "type": "number"
+            },
+            {
+              "id": "a65cf5d6-4b83-463f-8bbe-7307e8bfaa9e",
+              "name": "number",
+              "value": "={{ $('Incrementar Intento').item.json.number }}",
+              "type": "string"
+            },
+            {
+              "id": "f6a91e6c-13dd-46ae-8248-b428bd95f08a",
+              "name": "text",
+              "value": "={{ $('Incrementar Intento').item.json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        176
+      ],
+      "id": "18567d22-2339-4f1a-b452-58c5cb5ee920",
+      "name": "Resultado - Error final"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Contexto Envío Actual').item.json.base_url + '/instance/connectionState/' + $('Contexto Envío Actual').item.json.instance }}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={{ { apikey: $('Contexto Envío Actual').item.json.apikey } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -32,
+        -192
+      ],
+      "id": "347acae9-2f41-4525-b825-bdce5ef0e709",
+      "name": "Evolution - Connection State",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1043dc47-1f21-458c-a2e6-7f8442f4b2ee",
+              "name": "success",
+              "value": "={{ true }}",
+              "type": "boolean"
+            },
+            {
+              "id": "cde8d323-6801-4eeb-9138-15b71f97bbaa",
+              "name": "message",
+              "value": "={{ 'Mensaje enviado correctamente' }}",
+              "type": "string"
+            },
+            {
+              "id": "844c4901-4a65-4d1d-a3f1-7bac4ea4e003",
+              "name": "attempt",
+              "value": "={{ $('Contexto Envío Actual').item.json.attempt }}",
+              "type": "number"
+            },
+            {
+              "id": "af260061-9b9f-4fdc-ac23-c995c83c3b14",
+              "name": "number",
+              "value": "={{ $('Contexto Envío Actual').item.json.number }}",
+              "type": "string"
+            },
+            {
+              "id": "687eb9b9-4670-4b3e-bdf2-47caf5db2d52",
+              "name": "text",
+              "value": "={{ $('Contexto Envío Actual').item.json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        912,
+        -368
+      ],
+      "id": "6d74d25b-98e7-41dc-a9d8-ba72babff908",
+      "name": "Resultado - OK"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9cc272ac-2970-4133-9846-f2dd74a01453",
+              "name": "base_url",
+              "value": "={{ $json.base_url }}",
+              "type": "string"
+            },
+            {
+              "id": "b9cd2525-c33a-486b-aaea-b6dd1e2afc83",
+              "name": "instance",
+              "value": "={{ $json.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "59ef9bce-f009-4578-8ae3-69cee859d464",
+              "name": "apikey",
+              "value": "={{ $json.apikey }}",
+              "type": "string"
+            },
+            {
+              "id": "562ab891-cb08-4523-a020-a257cec59bf8",
+              "name": "number",
+              "value": "={{ $json.number }}",
+              "type": "string"
+            },
+            {
+              "id": "8a14adcb-d731-43bd-b00d-a3d083bcb0f1",
+              "name": "text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "282cc8ce-1ad8-424f-8a3d-e85aecab16bb",
+              "name": "attempt",
+              "value": "={{ Number($json.attempt || 1) }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        -192
+      ],
+      "id": "8bbcab1a-b1c9-4479-a20b-15460e9c6914",
+      "name": "Contexto Envío Actual"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Envío",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Envío": {
+      "main": [
+        [
+          {
+            "node": "IF - Hay texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Instancia conectada": {
+      "main": [
+        [
+          {
+            "node": "Evolution - SendText",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Evolution - Restart Instance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evolution - SendText": {
+      "main": [
+        [
+          {
+            "node": "IF - Envío OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Envío OK": {
+      "main": [
+        [
+          {
+            "node": "Resultado - OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Evolution - Restart Instance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Hay texto": {
+      "main": [
+        [
+          {
+            "node": "Contexto Envío Actual",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resultado - Sin texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evolution - Restart Instance": {
+      "main": [
+        [
+          {
+            "node": "Wait - Reconexión",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Incrementar Intento": {
+      "main": [
+        [
+          {
+            "node": "IF - Intentos restantes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait - Reconexión": {
+      "main": [
+        [
+          {
+            "node": "Incrementar Intento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Intentos restantes": {
+      "main": [
+        [
+          {
+            "node": "Contexto Envío Actual",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resultado - Error final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evolution - Connection State": {
+      "main": [
+        [
+          {
+            "node": "IF - Instancia conectada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contexto Envío Actual": {
+      "main": [
+        [
+          {
+            "node": "Evolution - Connection State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "82915d6284021ae316fa922b02405245da9d230ae25a4604189ab9cf7292c161"
+  }
+}
