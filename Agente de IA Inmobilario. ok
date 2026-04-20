@@ -1,0 +1,4140 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Ver disponibilidad",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "lic.ricardozatarain@gmail.com",
+          "mode": "list",
+          "cachedResultName": "lic.ricardozatarain@gmail.com"
+        },
+        "limit": 15,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -2784,
+        4144
+      ],
+      "id": "006d46ec-04a4-4a0b-8151-8c9dafa796c1",
+      "name": "Ver Disponibilidad",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "KQfHwZl8hZcJxRAV",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Crear visita",
+        "calendar": {
+          "__rl": true,
+          "value": "c2e6bf4f2c1b172396b58f1190a3feb23d60a4577673935db43e3a11f7f62659@group.calendar.google.com",
+          "mode": "id"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', `Hora de inicio`, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', `Hora de fin (1 hora despues)`, 'string') }}",
+        "additionalFields": {
+          "attendees": [],
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', `Detalles de la cita`, 'string') }}",
+          "location": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Location', `Dirección de la cita`, 'string') }}",
+          "summary": "=Nueva visita agendada"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -2656,
+        4144
+      ],
+      "id": "dab98656-622d-4189-944a-060e877984e8",
+      "name": "Crear Cita",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "KQfHwZl8hZcJxRAV",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Modificar visita",
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "lic.ricardozatarain@gmail.com",
+          "mode": "list",
+          "cachedResultName": "lic.ricardozatarain@gmail.com"
+        },
+        "eventId": "={{ $fromAI('Event_ID', `Event ID`, 'string') }}",
+        "updateFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -2528,
+        4144
+      ],
+      "id": "8986ca21-fd68-4382-94e9-d3eacc6e56f7",
+      "name": "Modificar Cita",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "KQfHwZl8hZcJxRAV",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Enviar email de nueva cita",
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', `Email`, 'string') }}",
+        "subject": "Visita agendada",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', `Genera un HTML con todos los datos de la cita añadiendo negrita`, 'string') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -2272,
+        4144
+      ],
+      "id": "c1d31e13-11ac-4517-9a6f-bd50face0b19",
+      "name": "Gmail",
+      "webhookId": "422d1406-20a4-4089-aa92-3f0eb7ead7f3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "XeqcYu7HiO5wy5eB",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "=Eres un sistema de razonamiento avanzado para un asistente inmobiliario. Tu tarea es analizar la información del cliente y la base de datos de Google Sheets 'demo-inmobiliarias', y generar decisiones o sugerencias inteligentes.\n\nEntradas que recibirás:\n\n* Datos del cliente: nombre completo, teléfono, email, tipo de propiedad, ubicación, presupuesto mínimo y máximo, tamaño, número de habitaciones y baños, plazo de compra/alquiler.\n* Base de datos de propiedades con todos los campos relevantes.\n\nTus objetivos son:\n\n1. Determinar qué propiedades cumplen los criterios del cliente.\n2. Sugerir la mejor propiedad o conjunto de propiedades según coincidencias y preferencias.\n3. Verificar la disponibilidad para agendar citas y recomendar horarios óptimos.\n4. Generar el contenido del email de confirmación de cita incluyendo fecha, hora, dirección y detalles de la propiedad.\n5. Si falta información crítica, indicar claramente qué datos se deben recopilar antes de continuar.\n6. Si no puedes dar una respuesta segura, indicar que se requiere intervención humana.\n\nSalida esperada:\n\n* Lista de propiedades recomendadas (Nombre de la propiedad, dirección, características).\n* Resumen de cita a agendar (si aplica).\n* Mensaje a enviar al cliente (si aplica).\n* Lista de datos faltantes (si aplica)."
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        -2144,
+        4144
+      ],
+      "id": "11930768-07b3-41b7-965e-3938ffde20e0",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {
+          "responseFormat": "text",
+          "temperature": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -3040,
+        4160
+      ],
+      "id": "eb9ac3d2-9627-4fd8-9fb6-db139c41d6dc",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "CCKwKIc6Rg7AOinG",
+          "name": "demos chat on"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Mensaje: {{ $json.mensajes }}",
+        "options": {
+          "systemMessage": "=Tu nombre es Liz Ortega. Eres la asesora de una inmobiliaria llamada \"Tu Propiedad\" y conversas por WhatsApp como una ejecutiva comercial real: cercana, profesional, clara, breve, resolutiva y orientada a resultados.\n\nNunca hables de procesos internos, herramientas, automatizaciones ni del sistema. Nunca menciones que eres una IA, un bot o un sistema automatizado. Tu nombre es Liz Ortega. Eres la asesora de una inmobiliaria llamada \"Tu Propiedad\"\n\nTu función es atencion al cliente en genera para atender cualquier duda o requerimiento del cliente, atender al prospecto, entender qué busca, detectar su nivel de interés, mostrar opciones relevantes y llevar la conversación hacia una visita, llamada o siguiente paso comercial.\n\nOBJETIVO PRINCIPAL\n\nTu meta no es solo informar. Tu prioridad es:\n1. identificar al lead\n2. identificar el interés real del cliente\n3. recopilar los datos clave sin hacer sentir la conversación como un formulario\n4. mostrar propiedades relevantes\n5. mover la conversación hacia una visita agendada o una llamada\n6. si no es posible cerrar, dejar el lead correctamente calificado para seguimiento humano\n\nEVITA SONAR COMO IA\n\n- No uses saludos genéricos tipo “¿en qué te puedo ayudar hoy?”, “estoy para ayudarte”, “soy tu asistente” o similares.\n- No respondas como soporte ni como chatbot clásico.\n- Si el cliente ya escribió lo que busca, responde directo sobre su necesidad sin meter una introducción genérica.\n- Habla como una asesora comercial real por WhatsApp.\n- Si falta el nombre del cliente, pídelo de forma natural y breve, sin sonar robótica.\n- Evita frases demasiado correctas o impersonales.\n- Prefiere respuestas como:\n  - “Claro, con gusto. ¿Con quien tengo el gusto?”\n  - “Perfecto. ¿Me compartes tu nombre?”\n  - No uses siempre la misma frase. Mantén variedad natural.\n\nTONO Y ESTILO DE COMUNICACIÓN\n\nDebes comunicarte así:\n- profesional, cálida y consultiva\n- breve, clara y directa\n- cercana, segura y elegante\n- útil y resolutiva\n- orientada a ayudar y cerrar el siguiente paso comercial\n\nReglas de tono:\n- nunca uses lenguaje técnico, robótico o demasiado formal\n- evita respuestas largas\n- evita listas grandes o explicaciones innecesarias\n- evita sonar insistente o agresiva\n- no uses muchos emojis\n- habla como una asesora inmobiliaria premium por WhatsApp\n- cada mensaje debe sentirse natural y humano\n\nLÓGICA GENERAL DE LA CONVERSACIÓN\n\nIDENTIFICACION DEL LEAD\n\nSi aún no conoces el nombre del cliente, pídeselo al inicio de la conversación o en tu primer mensaje útil antes de profundizar en recomendaciones, búsqueda detallada, agendado o registro completo del lead.\n\nReglas:\n- Si no sabes el nombre del cliente, solicita al menos su nombre en una forma natural y breve.\n- No pidas todos los datos personales al mismo tiempo.\n- Primero identifica al lead con su nombre y luego continúa con la conversación comercial.\n- Después de obtener el nombre, registra el dato con la herramienta Registrar Datos.\n- Si el cliente ya compartió su nombre previamente en la conversación o ya está disponible en contexto, no lo vuelvas a pedir.\n- Si el cliente hace una pregunta directa sobre propiedades, puedes responder brevemente, pero intenta obtener su nombre en el mismo turno o inmediatamente después.\n\nCONTINUIDAD DESPUES DE OBTENER EL NOMBRE\n\nSi el cliente ya había dicho previamente qué busca y el único dato faltante era su nombre, entonces en cuanto comparta su nombre debes continuar en el mismo mensaje con el siguiente paso comercial.\n\nReglas:\n- No te detengas solo en saludar o agradecer el nombre.\n- Si ya conoces la intención del cliente, el tipo de propiedad, la ubicación, el presupuesto o datos suficientes para avanzar, continúa de inmediato con la búsqueda, recomendación o siguiente acción útil.\n- No respondas únicamente con frases como “Mucho gusto”, “Un placer” o “Busquemos opciones para ti” si ya puedes avanzar.\n- Después de obtener el nombre, registra el dato y continúa con la conversación usando el contexto que ya te había dado el cliente.\n- Si ya tienes criterios suficientes, usa la herramienta Buscar Propiedades en ese mismo turno.\n- Si todavía falta un dato verdaderamente necesario para avanzar, pídelo en ese mismo mensaje de forma natural.\n\nSigue esta lógica:\n\n1. Identificar al lead\n- si no conoces su nombre, solicítalo de forma natural\n- registra ese dato en cuanto lo obtengas\n- si el cliente ya había dado suficiente contexto antes de compartir su nombre, continúa en ese mismo turno con la búsqueda o recomendación\n\n2. Entender la intención del cliente\nPrimero identifica lo mínimo necesario para poder ayudar bien:\n- si busca comprar o alquilar\n- qué tipo de propiedad busca\n- en qué zona o ubicación\n- presupuesto aproximado\n\n3. Calificar rápido sin interrogar demasiado\n- pide solo un dato por mensaje cuando realmente haga falta\n- no hagas preguntas innecesarias si ya tienes suficiente información para avanzar\n- no conviertas la conversación en un formulario\n- primero obtén lo mínimo útil para mostrar opciones\n- después completa los datos faltantes de forma natural\n\n4. Mostrar propiedades relevantes\n- usa la herramienta Buscar Propiedades cuando ya tengas criterios suficientes como operación, tipo de propiedad, ubicación, presupuesto o alguna combinación útil\n- presenta solo propiedades que realmente encajen con lo que busca el cliente\n- nunca inventes propiedades, precios, ubicaciones, características ni disponibilidad\n- cuando sea posible, muestra máximo 3 opciones por turno\n- si hay muchas coincidencias, muestra primero las mejores 2 o 3\n- explica brevemente por qué cada opción encaja con lo que busca el cliente\n- si no hay coincidencias exactas, ofrece las opciones más cercanas y dilo con claridad\n\n5. Detectar interés real\nConsidera como señales de interés real cuando el cliente:\n- pregunta por precio\n- pregunta por ubicación\n- pregunta por disponibilidad\n- pregunta por características concretas\n- pregunta si puede verla\n- reacciona positivamente a una opción\n- compara opciones\n- da señales de intención como “me interesa”, “esa me gustó”, “quiero verla”, “se ve bien”, “me queda”, “sí me interesa”\n\n6. Llevar la conversación al siguiente paso comercial\nCuando detectes interés real:\n- no te quedes solo dando información\n- orienta la conversación hacia una visita o llamada\n- no sigas haciendo preguntas secundarias si el cliente ya está listo para avanzar\n- propone el siguiente paso con naturalidad y seguridad\n\n7. Cerrar o escalar correctamente\n- si el cliente quiere visitar una propiedad, usa las herramientas para verificar disponibilidad y agendar\n- si no está listo para agendar, deja una acción concreta: confirmar preferencia, compartir mejores opciones o preparar seguimiento\n- si pide hablar con una persona o no puedes responder con certeza, deriva a un agente humano\n\nDATOS DEL CLIENTE A RECOPILAR\n\nRecopila, en la medida en que sean útiles para avanzar:\n- nombre completo\n- teléfono\n- email\n- tipo de propiedad\n- tipo de operación\n- ubicación deseada\n- presupuesto mínimo\n- presupuesto máximo\n- tamaño en m²\n- número de habitaciones\n- número de baños\n- plazo para decidir o requerir\n- preferencias adicionales\n\nRegla importante:\nNo pidas todos los datos al inicio. Primero consigue los datos mínimos útiles para mostrar opciones y detectar interés. Después completa los faltantes de forma natural.\n\nAntes de recomendar propiedades de forma detallada o avanzar a una cita, asegúrate de conocer al menos:\n- el nombre del cliente\n- la intención de compra o renta\n- el tipo de propiedad o la ubicación o el presupuesto.\n\nUSO OBLIGATORIO DE REGISTRAR DATOS\n\n- Debes ejecutar la herramienta Registrar Datos cada vez que el cliente proporcione un dato nuevo relevante.\n- Debes ejecutar Registrar Datos inmediatamente después de obtener el nombre del cliente, aunque todavía falten otros datos.\n- Si el cliente ya compartió criterios de búsqueda como operación, ubicación, presupuesto o tipo de propiedad, debes registrarlos aunque la ficha aún no esté completa.\n- No esperes a tener toda la información para registrar el lead.\n- Si el cliente da su nombre después de haber explicado lo que busca, registra en ese mismo turno el nombre y toda la información previamente compartida.\n- Registrar Datos no es opcional: úsala siempre que haya información nueva o corregida.\n\nPRESENTACIÓN DE PROPIEDADES\n\nCuando presentes propiedades:\n- muestra máximo 3 opciones por mensaje\n- no mandes bloques largos\n- presenta cada propiedad de forma breve y clara\n- incluye solo lo más importante: nombre o referencia, zona, precio, característica principal y por qué encaja\n- evita saturar con demasiados detalles\n- termina orientando al cliente a elegir una opción o avanzar a visita\n\nForma de presentar las opciones:\n- primero una frase breve de contexto\n- luego 1, 2 o 3 opciones como recomendación\n- después una pregunta o cierre comercial claro\n\nEjemplo de estructura:\n“Vi opciones que sí pueden encajar con lo que buscas.\n1. [propiedad]: [zona], [precio], [atributo fuerte].\n2. [propiedad]: [zona], [precio], [atributo fuerte].\n3. [propiedad]: [zona], [precio], [atributo fuerte].\nSi quieres, te comparto la que mejor veo para ti o te ayudo a agendar visita.”\n\nNo copies este ejemplo literal salvo que sea útil. Úsalo como referencia de estilo.\n\nREGLAS PARA PROPONER CITA O LLAMADA\n\nDebes proponer visita o llamada cuando:\n- el cliente muestre interés claro por una propiedad\n- el cliente pida verla\n- el cliente haga preguntas concretas y positivas sobre una opción\n- ya tengas suficiente contexto para avanzar\n\nCuando propongas la cita:\n- hazlo con naturalidad\n- no pidas demasiadas cosas antes de proponerla\n- si falta algún dato mínimo para agendar, pídelo de forma puntual\n- si ya está listo para avanzar, deja de hacer preguntas secundarias\n\nEjemplos de intención correcta:\n- “Si gustas, te puedo ayudar a agendar una visita.”\n- “Si te interesa, reviso disponibilidad y te propongo horario.”\n- “Si esta opción te gustó, podemos coordinar una visita.”\n- “Si prefieres, también podemos agendar una llamada para darte más detalle.”\n\nNo repitas estas frases siempre igual. Mantén variedad natural.\n\nHERRAMIENTAS Y ACCIONES POSIBLES\n\n1. Buscar Propiedades\n- usa esta herramienta para obtener coincidencias reales con base en los criterios del cliente\n- úsala cuando ya tengas información suficiente para una búsqueda útil\n- no inventes información\n- después de recibir resultados, presenta máximo 3 opciones por turno\n- si no hay coincidencias exactas, usa las opciones más cercanas solo si siguen siendo razonables para la búsqueda del cliente\n\n2. Agendar citas\n- usa Google Calendar para verificar disponibilidad y crear o modificar citas\n- solo agenda cuando el cliente haya mostrado intención clara de visitar una propiedad o avanzar a cita\n\n3. Enviar email de confirmación\n- solo envía email cuando ya se haya agendado una cita\n- el email debe incluir fecha, hora, dirección de la propiedad y detalles relevantes\n\n4. Registrar Datos\n- es obligatorio registrar los datos del cliente conforme se vayan obteniendo\n- cada vez que el cliente proporcione un dato nuevo o corrija uno anterior, ejecuta esta herramienta\n- nunca dejes datos importantes sin registrar\n\n5. Clasificar\n- ejecuta esta herramienta cuando la conversación haya terminado en alguno de estos casos:\n  - el cliente agendó una cita\n  - el cliente no está interesado\n  - el cliente deja de responder\n- envía el teléfono y un resumen claro de la conversación para clasificar el lead\n\n6. Intervención humana\n- si el cliente pide hablar con una persona o si no puedes responder con certeza, responde exactamente:\nNo tengo suficiente información para responder con exactitud. Un agente humano se pondrá en contacto contigo lo antes posible para ayudarte.\n\nREGLAS COMERCIALES IMPORTANTES\n\n- tu meta es mover al cliente al siguiente paso, no solo responder preguntas\n- cuando detectes interés real, propone avanzar\n- no hagas más preguntas de las necesarias si el cliente ya está listo\n- si el cliente muestra interés por una opción concreta, intenta cerrar con una propuesta clara de visita o llamada\n- si no hay coincidencias exactas, ofrece las más cercanas y explica brevemente por qué podrían interesarle\n- no seas fría, técnica ni excesivamente informativa\n- no presiones demasiado, pero tampoco te quedes solo informando\n- siempre busca dejar una acción concreta al final del mensaje\n\nESTILO DE RESPUESTA\n\nCada respuesta debe cumplir esto:\n- breve y natural\n- clara y conversacional\n- mantén un objetivo claro por mensaje\n- si el cliente acaba de proporcionar el último dato faltante para continuar, avanza en ese mismo mensaje sin detenerte solo a confirmar\n- sin listas largas al hablar con el cliente\n- sin repetir información innecesaria\n- con intención comercial suave pero clara\n- enfocada en avanzar la conversación\n\nSI FALTA INFORMACIÓN\n\nSi todavía falta información importante:\n- pide solo lo necesario para seguir avanzando\n- prioriza conseguir primero lo útil para recomendar opciones\n- deja lo secundario para después\n\nSI NO HAY PROPIEDADES IDEALES\n\nSi no hay coincidencias exactas:\n- no inventes\n- ofrece las opciones más cercanas\n- explica brevemente por qué las propones\n- intenta mantener vivo el interés del cliente\n- orienta la conversación hacia una alternativa útil: otra zona, otro rango o seguimiento humano\n\nFECHA ACTUAL\n\nFecha actual: {{ $now.format('dd-MM-yyyy HH:mm') }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -2512,
+        3856
+      ],
+      "id": "4a9cdd85-9b7d-4fd8-808a-cb03b98da625",
+      "name": "Agente de IA",
+      "alwaysOutputData": true,
+      "retryOnFail": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "description": "Utiliza esta herramienta una vez hayas terminado la conversación para clasificar el cliente",
+        "workflowId": {
+          "__rl": true,
+          "value": "mENHZMchmgoQDxjQ",
+          "mode": "list",
+          "cachedResultName": "Agente de IA Inmobilario"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telefono": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('telefono', `Telefono de cliente`, 'string') }}",
+            "resumen": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('resumen', `Resúmen de la conversación`, 'string') }}"
+          },
+          "matchingColumns": [
+            "Teléfono"
+          ],
+          "schema": [
+            {
+              "id": "telefono",
+              "displayName": "telefono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "resumen",
+              "displayName": "resumen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -2016,
+        4144
+      ],
+      "id": "7dbe3716-d104-4672-a11c-17a915acd145",
+      "name": "Clasificar"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Usa esta herramienta para registrar o actualizar la información del lead en la hoja 'leads' cada vez que el cliente proporcione un dato nuevo, corrija uno anterior o cambie de nivel de interés durante la conversación.\n\nUSO OBLIGATORIO DE REGISTRAR DATOS\n\n- Debes ejecutar la herramienta Registrar Datos cada vez que el cliente proporcione un dato nuevo relevante.\n- Debes ejecutar Registrar Datos inmediatamente después de obtener el nombre del cliente, aunque todavía falten otros datos.\n- Si el cliente ya compartió criterios de búsqueda como operación, ubicación, presupuesto o tipo de propiedad, debes registrarlos aunque la ficha aún no esté completa.\n- No esperes a tener toda la información para registrar el lead.\n- Si el cliente da su nombre después de haber explicado lo que busca, registra en ese mismo turno el nombre y toda la información previamente compartida.\n- Registrar Datos no es opcional: úsala siempre que haya información nueva o corregida.\n\nObjetivo:\nGuardar el lead de forma ordenada y mantener actualizada su información comercial para seguimiento, búsqueda de propiedades, agendado de cita y clasificación final.\n\nReglas de uso:\n- Usa esta herramienta cada vez que el cliente comparta un dato nuevo relevante.\n- Usa esta herramienta también cuando el cliente corrija un dato anterior.\n- Usa el teléfono como identificador principal del lead para actualizar la misma fila y no crear duplicados.\n- Nunca inventes datos.\n- Si un dato no fue proporcionado por el cliente, déjalo vacío.\n- Si un dato es ambiguo, no lo supongas; espera a confirmarlo.\n- Registra solo información útil y comercialmente relevante.\n- Si el cliente muestra interés claro, actualiza el estado del cliente a una etapa más avanzada.\n- Si el cliente ya no está interesado, actualiza el estado del cliente para reflejarlo.\n- Si el cliente solicita hablar con una persona o se requiere seguimiento humano, regístralo en el resumen o en el estado del cliente.\n\nCriterio para el campo \"Estado del Cliente\":\n- Nuevo: cuando apenas inicia conversación y aún hay poca información.\n- Calificando: cuando ya se están reuniendo datos del prospecto.\n- Interesado: cuando el cliente muestra interés real en opciones o hace preguntas concretas.\n- Cita agendada: cuando ya se confirmó una visita.\n- Seguimiento humano: cuando debe intervenir una persona.\n- No interesado: cuando el cliente dice que no desea continuar.\n\nCriterio para el campo \"Resumen de conversación\":\n- Escribe un resumen breve, claro y útil.\n- Incluye qué busca el cliente, zona, presupuesto, tipo de propiedad y nivel de interés si ya se conoce.\n- Si mostró interés por una propiedad o se propuso visita, inclúyelo.\n- No escribas textos largos ni redundantes.\n\nDatos que debes registrar si están disponibles:\n- Nombre completo\n- Teléfono\n- Email\n- Tipo de propiedad\n- Tipo de operación\n- Ubicación deseada\n- Presupuesto mínimo\n- Presupuesto máximo\n- Plazo de compra o renta\n- Tamaño m²\n- Número de habitaciones\n- Número de baños\n- Lugares de autos\n- Ascensor\n- Área verde\n- Piscina\n- Preferencias adicionales\n- Estado del cliente\n- Resumen de conversación\n\nResultado esperado:\nLa fila del lead debe quedar actualizada con la información más reciente, útil y correcta, sin duplicados y sin datos inventados.",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA",
+          "mode": "list",
+          "cachedResultName": "demo-inmobiliarias",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1002556348,
+          "mode": "list",
+          "cachedResultName": "leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit#gid=1002556348"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nombre Completo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Nombre_Completo', `Nombre completo`, 'string') }}",
+            "Email": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Email', `Email`, 'string') }}",
+            "ID Cliente": "={{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}",
+            "Telefono": "={{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}",
+            "Tipo de Propiedad Deseada": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tipo_de_Propiedad_Deseada', `Casa, departamento, terreno, local u otro tipo de propiedad que el cliente esté buscando.`, 'string') }}",
+            "Tipo de Operacion Deseada": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tipo_de_Operacion_Deseada', `Usa valores claros como compra o renta.`, 'string') }}",
+            "Ubicacion deseada": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Ubicacion_deseada', `Zona, colonia, municipio o ciudad donde desea buscar.`, 'string') }}",
+            "Presupuesto minimo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Presupuesto_minimo', `Monto mínimo aproximado que el cliente quiere invertir o pagar.`, 'string') }}",
+            "Presupuesto maximo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Presupuesto_maximo', `Monto máximo aproximado que el cliente quiere invertir o pagar.`, 'string') }}",
+            "Plazo para decidir/requerir": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Plazo_para_decidir_requerir', `Tiempo en el que el cliente desea mudarse, comprar, rentar o tomar una decisión.`, 'string') }}",
+            "Tamaño m² Deseado": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tama_o_m__Deseado', `Tamaño aproximado en m² si el cliente lo menciona. Si no lo menciona, deja este campo vacío.`, 'string') }}",
+            "Num de Habitaciones Deseadas": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Num_de_Habitaciones_Deseadas', `Número de habitaciones deseadas si el cliente lo menciona. Si no, deja vacío.`, 'string') }}",
+            "Num de Baños Deseados": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Num_de_Ba_os_Deseados', `Número de baños deseados si el cliente lo menciona. Si no, deja vacío.`, 'string') }}",
+            "Num de Medios Baños Deseados": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Num_de_Medios_Ba_os_Deseados', `Número de medios baños deseados si el cliente lo menciona. Si no, deja vacío.`, 'string') }}",
+            "Lugares de Autos Deseados": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Lugares_de_Autos_Deseados', `Número de lugares de auto deseados si el cliente lo menciona. Si no, deja vacío.`, 'string') }}",
+            "Ascensor Deseado (si/no)": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Ascensor_Deseado__si_no_', `Usa solo si o no. Si el cliente no lo ha mencionado, deja este campo vacío.`, 'string') }}",
+            "Area Verde (si/no)": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Area_Verde__si_no_', `Usa solo si o no. Si el cliente no lo ha mencionado, deja este campo vacío.`, 'string') }}",
+            "Estado del Cliente": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Estado_del_Cliente', `Usa solo uno de estos valores: Nuevo, Calificando, Interesado, Cita agendada, Seguimiento humano, No interesado.`, 'string') }}",
+            "Preferencias Adicionales": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Preferencias_Adicionales', `Extras o condiciones especiales que el cliente haya mencionado, por ejemplo cochera, balcón, seguridad, pet friendly, etc.`, 'string') }}",
+            "Fecha y hora ultima interaccion": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+            "Resumen de conversacion": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Resumen_de_conversacion', `Escribe un resumen breve y útil del lead: qué busca, zona, presupuesto, tipo de propiedad y nivel de interés actual. Si todavía falta contexto, resume solo lo ya conocido.`, 'string') }}",
+            "Piscina (si/no)": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Piscina__si_no_', `Usa solo si o no. Si el cliente no lo ha mencionado, deja este campo vacío.`, 'string') }}"
+          },
+          "matchingColumns": [
+            "ID Cliente"
+          ],
+          "schema": [
+            {
+              "id": "ID Cliente",
+              "displayName": "ID Cliente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Fecha y hora ultima interaccion",
+              "displayName": "Fecha y hora ultima interaccion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre Completo",
+              "displayName": "Nombre Completo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Telefono",
+              "displayName": "Telefono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tipo de Propiedad Deseada",
+              "displayName": "Tipo de Propiedad Deseada",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tipo de Operacion Deseada",
+              "displayName": "Tipo de Operacion Deseada",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ubicacion deseada",
+              "displayName": "Ubicacion deseada",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Presupuesto minimo",
+              "displayName": "Presupuesto minimo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Presupuesto maximo",
+              "displayName": "Presupuesto maximo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Plazo para decidir/requerir",
+              "displayName": "Plazo para decidir/requerir",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tamaño m² Deseado",
+              "displayName": "Tamaño m² Deseado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Num de Habitaciones Deseadas",
+              "displayName": "Num de Habitaciones Deseadas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Num de Baños Deseados",
+              "displayName": "Num de Baños Deseados",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Num de Medios Baños Deseados",
+              "displayName": "Num de Medios Baños Deseados",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lugares de Autos Deseados",
+              "displayName": "Lugares de Autos Deseados",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ascensor Deseado (si/no)",
+              "displayName": "Ascensor Deseado (si/no)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Area Verde (si/no)",
+              "displayName": "Area Verde (si/no)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Piscina (si/no)",
+              "displayName": "Piscina (si/no)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Estado del Cliente",
+              "displayName": "Estado del Cliente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Preferencias Adicionales",
+              "displayName": "Preferencias Adicionales",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Resumen de conversacion",
+              "displayName": "Resumen de conversacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -1888,
+        4144
+      ],
+      "id": "68269739-c52c-4a9c-b52a-931cf44dd38a",
+      "name": "Registrar Datos",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "brlgpJUp82pkG28u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "realify",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -2928,
+        2928
+      ],
+      "id": "ee8431a7-d40f-48b6-9c8a-55428c764039",
+      "name": "Webhook1",
+      "webhookId": "f809b962-a21e-4f7a-97ca-1d7c65870326"
+    },
+    {
+      "parameters": {
+        "options": {
+          "prompt": "### Instructions:\n--------------\n{instructions}\n--------------\n\n### Completion:\n--------------\n{completion}\n--------------\n\nArriba, la Completion no satisface los requisitos dados en las Instructions.\nError:\n--------------\n{error}\n--------------\n\nEstructura a realizar (JSON):\n\n\n  \"response\": {\n    \"part_1\": \"Contenido de la primera parte de la respuesta.\",\n    \"part_2\": \"Contenido de la segunda parte de la respuesta.\",\n    \"part_3\": \"Contenido de la tercera parte de la respuesta (opcional).\",\n    \"part_4\": \"Contenido de la cuarta parte de la respuesta (opcional).\",\n    \"part_5\": \"Contenido de la quinta parte de la respuesta (opcional).\"\n  }\n\n\n\n\n### Normas para Generar un JSON Válido como respuesta:\n1. Incluye solo caracteres seguros en los valores de texto.\n2. Si necesitas usar caracteres especiales como `\\n`, `\\t` o emojis, escribe los emojis en formato Unicode."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+      "typeVersion": 1,
+      "position": [
+        -1552,
+        4608
+      ],
+      "id": "88bf372d-81ad-4022-82b7-bc6d56f67855",
+      "name": "Auto-fixing Output Parser2"
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -1536,
+        4816
+      ],
+      "id": "eb6592fc-be62-4135-809e-96ee237a7313",
+      "name": "OpenAI Chat Model7",
+      "credentials": {
+        "openAiApi": {
+          "id": "CCKwKIc6Rg7AOinG",
+          "name": "demos chat on"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0,
+          "timeout": 300000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -1680,
+        4608
+      ],
+      "id": "da85f484-f688-4735-9426-117f2cc10724",
+      "name": "OpenAI Chat Model8",
+      "credentials": {
+        "openAiApi": {
+          "id": "CCKwKIc6Rg7AOinG",
+          "name": "demos chat on"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Especificaciones para el Formato de Respuesta\nDivide tu respuesta en cinco partes solo si es necesario utiliza “part_1\" y \"part_2\" y deja el resto vacías. Si la respuesta reauiere otra parte autiliza “part_1\", \"part_2\" y \"part_3\" y deja el resto vacías. Si la respuesta aun requiere mas campos utiliza todos los campos.\n\n\n\nSiempre tu respuesta debe dividirse minimo en \"part_1\" y/o \"part_2\".\n\nSi es una respuesta corta y completas cinco partes, deja las partes restantes como cadenas vacías (\"\").\n\nEjemplo de respuesta:\n{\n  \"response\": {\n    \"part_1\": \"Responde con la primera parte de la respuesta.\",\n    \"part_2\": \"Responde con la segunda parte de la respuesta.\",\n    \"part_3\": \"Responde con la tercera parte de la respuesta (opcional).\",\n    \"part_4\": \"Responde con la cuarta parte de la respuesta (opcional).\",\n    \"part_5\": \"Responde con la quinta parte de la respuesta (opcional).\"\n    \n  }\n}\n\nAquí el mensaje recibido que debes reestructurar a JSON: {{ $json.output }}\n\nIMPORTANTE: eliminar los signos de apertura tanto en preguntas como en exclamaciones, como lo hacen en el idioma inglés.\n\n### Normas para Generar un JSON Válido como respuesta\nPara asegurar que el JSON generado sea válido y sin errores, sigue estas reglas:\n1. Incluye solo caracteres seguros en los valores de texto.\n  - Si necesitas usar caracteres especiales como \\n, \\t o emojis, escríbelos en formato Unicode (\\uXXXX).\n2. Eliminar los signos de interrogacion como \"!\" y los asteriscos como \"*\".\n3. Asegura que las listas y objetos JSON no tengan comas finales.\n  - \"fields\": [ { \"key\": \"value\" } ]\n4. Cada value del objeto debe ser SI O SI un str/texto, no puede contener objetos ni nada diferente a eso. Por favor estructura esto correctamente ya que si no se hace de esta forma sin importar la cantidad de productos nunca me van a pagar el otro 50% del desarrollo que ya comence.\nRecuerda respetar los saltos de linea que recibes desde el input.\n\nSiguiendo estas reglas, el json generado sera estructuralmente correcto y evitara errores al procesarlo.\n\n```plaintext\nIMPORTANTE: NO devuelvas tu respuesta con ```json ni con ningún tipo de bloque de código.  \nSolo responde directamente con el JSON limpio, sin marcas de texto, sin explicaciones."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        -1664,
+        4432
+      ],
+      "id": "8c62b6fb-8f71-4698-b509-948222578dbe",
+      "name": "Format Chain2",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1600,
+        2928
+      ],
+      "id": "3dee67cd-327d-4a32-9f25-6f360f651dfc",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Push').item.json.message.chat_id }}_buffer",
+        "tableName": "histories",
+        "contextWindowLength": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -2912,
+        4160
+      ],
+      "id": "ec32820e-1f1b-4ff4-8b17-0a12360fb90f",
+      "name": "Postgres Chat Memory2",
+      "credentials": {
+        "postgres": {
+          "id": "s6XSKW4k3Uom2JUr",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "70ca3d2c-8809-477b-9d1e-1c4bbddcad19",
+              "name": "message.content",
+              "value": "={{ $('Edit_Fields3').item.json.message.texto }}",
+              "type": "string"
+            },
+            {
+              "id": "d896686d-e3a9-447f-8c9c-b2a925677946",
+              "name": "message.message_time",
+              "value": "={{ $('Edit_Fields3').item.json.message.message_time }}",
+              "type": "string"
+            },
+            {
+              "id": "cfd4fa04-8cf7-45a6-aef6-7fc9e396b10b",
+              "name": "message.chat_id",
+              "value": "={{ $('Edit_Fields3').item.json.message.chat_id }}",
+              "type": "string"
+            },
+            {
+              "id": "f10cf6a3-f025-4af3-81dc-83fad1480405",
+              "name": "message.apikey",
+              "value": "={{ $('Edit_Fields3').item.json.message.apikey }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -560,
+        3072
+      ],
+      "id": "141d88a4-35f6-482d-91c8-6feb617c7b84",
+      "name": "Edit Fields2",
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "message.audio_whats",
+        "options": {
+          "mimeType": "audio/mp3"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -704,
+        3280
+      ],
+      "id": "b3300bc2-960a-41cb-a89e-61e48a05e561",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a4dea512-d080-4e72-ade7-f8c208c1572d",
+              "name": "base64",
+              "value": "={{ $json.message.audio_whats }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -928,
+        3280
+      ],
+      "id": "8cde8fbf-ae58-4e51-a357-4528786a9074",
+      "name": "Edit Fields14"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "31bb40ea-6b48-4930-8128-0a6ef20ca37a",
+              "leftValue": "={{ $json.output.Response.part_2 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1024,
+        3920
+      ],
+      "id": "7c48ee60-b7b3-4e57-a731-4adf7d7c0a49",
+      "name": "If4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f5ae0e7d-3da3-46e2-993b-032c13ea81d0",
+              "leftValue": "={{ $json.message.por_mi }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2256,
+        2928
+      ],
+      "id": "c1dbd876-edc4-4cbb-abff-898cd9c28d63",
+      "name": "Verifica Quien Escribe"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "01710cff-5545-4630-81a7-bdcab359ea42",
+              "leftValue": "={{ $('Webhook').item.json.body.data.message.conversation }}",
+              "rightValue": "Te transfiero ...",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2048,
+        2784
+      ],
+      "id": "f4a92b3c-e9d5-4416-9b41-8e68a19ff6c4",
+      "name": "Verificar Palabra Clave"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $json.body.data.key.remoteJid }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -1824,
+        2656
+      ],
+      "id": "19b7ba5e-5f76-44ad-8d2d-c8b451b75246",
+      "name": "Activar Bot",
+      "credentials": {
+        "redis": {
+          "id": "bi5vcaBUpUVqC5ho",
+          "name": "Redis demo inmobiliaria"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ $('Webhook').item.json.body.data.key.remoteJid }}",
+        "value": "blocked-bot",
+        "expire": true,
+        "ttl": 600
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -1824,
+        2880
+      ],
+      "id": "afd273a8-128a-46d7-a221-af3c95ae4b49",
+      "name": "Bloquea al Agente",
+      "credentials": {
+        "redis": {
+          "id": "bi5vcaBUpUVqC5ho",
+          "name": "Redis demo inmobiliaria"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "bot-state",
+        "key": "={{ $json.message.chat_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -2048,
+        3136
+      ],
+      "id": "74b6e6e1-829c-496a-ab97-ea85ce8eabf6",
+      "name": "Verificacion de Bloqueo",
+      "alwaysOutputData": true,
+      "credentials": {
+        "redis": {
+          "id": "bi5vcaBUpUVqC5ho",
+          "name": "Redis demo inmobiliaria"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"Response\": {\n  \"part_1\": \"Primera parte del mensaje\",\n  \"part_2\": \"Segunda parte del mensaje\",\n  \"part_3\": \"Tercera parte del mensaje\",\n  \"part_4\": \"Cuarta parte del mensaje\",\n  \"part_5\": \"Quinta parte del mensaje\"\n}\n  }"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -1408,
+        4816
+      ],
+      "id": "0d4514a9-9082-4b99-ae39-c39f0ac2b5b3",
+      "name": "Structured Output Parser",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.audio_whats }}",
+                    "rightValue": "null",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "cabbc815-4afd-4303-a6a0-a4c32b42c4c8"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "texto"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "54536fbf-c36a-4799-bb31-4f229d1aeb3f",
+                    "leftValue": "={{ $json.message.audio_whats }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "audio"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1152,
+        3184
+      ],
+      "id": "3fd42f86-99fe-41eb-8885-98628c0c5868",
+      "name": "Switch",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c042e9d4-a878-4498-bf71-2314739cd3a0",
+              "name": "text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "cbbf4233-0bdb-468c-9a21-ca8e9ae5d757",
+              "name": "timestamp",
+              "value": "={{ $('Edit_Fields3').item.json.message.message_time }}",
+              "type": "string"
+            },
+            {
+              "id": "3ca48eae-8583-4374-9433-b606b8606104",
+              "name": "chat_id",
+              "value": "={{ $('Edit_Fields3').item.json.message.chat_id }}",
+              "type": "string"
+            },
+            {
+              "id": "9182fe4d-0c2c-4500-ab0a-f591b770267d",
+              "name": "id",
+              "value": "={{ $('Edit_Fields3').item.json.message.apikey }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -272,
+        3280
+      ],
+      "id": "49b9614b-e0e9-4337-8391-7ac4507585b2",
+      "name": "Edit Fields6"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a61e507a-c555-43c2-aa61-9f3a38757a3b",
+              "leftValue": "=={{ $json['bot-state'] }}",
+              "rightValue": "blocked-bot",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1824,
+        3136
+      ],
+      "id": "33e5b2e9-a640-4ff7-b365-f34c934971cd",
+      "name": "Verifica el estado de la sesión"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5b8c1fd6-2975-4bac-933d-9d5d51103607",
+              "name": "message.chat_id",
+              "value": "={{ $json.body.data.key.remoteJid }}",
+              "type": "string"
+            },
+            {
+              "id": "a065d3a9-d05f-4ad5-8ae8-bd086800c131",
+              "name": "message.apikey",
+              "value": "={{ $json.body.apikey }}",
+              "type": "string"
+            },
+            {
+              "id": "d680dba6-71bb-480a-8af1-03ab55d414ad",
+              "name": "message.texto",
+              "value": "={{ $json.body.data.message.conversation }}",
+              "type": "string"
+            },
+            {
+              "id": "740dd62d-61c8-4dd0-99e7-9ba538e12ea2",
+              "name": "message.audio_whats",
+              "value": "={{ $json.body.data.message.base64 }}",
+              "type": "string"
+            },
+            {
+              "id": "844707c9-f772-40ae-8b88-dff6803de70e",
+              "name": "message.por_mi",
+              "value": "={{ $json.body.data.key.fromMe }}",
+              "type": "boolean"
+            },
+            {
+              "id": "337c0cd7-76dd-4cf2-abb8-642b56ec65e8",
+              "name": "message.message_time",
+              "value": "={{ $now.toDateTime().toUTC().toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "ba766ac2-200f-4b9b-a7ba-ae7cab2b1556",
+              "name": "message.instance",
+              "value": "={{ $json.body.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "dfb66d6a-33a5-4544-944d-7fce7f98aba5",
+              "name": "message.url",
+              "value": "=https://realify-evolution-api.qagjha.easypanel.host",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2704,
+        2928
+      ],
+      "id": "b04319a1-cb17-428f-9fd7-fe24d56a6c59",
+      "name": "Edit_Fields3",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $('Edit_Fields3').item.json.message.chat_id }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -1600,
+        3184
+      ],
+      "id": "37ee524d-9e20-4166-939e-c7ac2bd7e681",
+      "name": "Redis2",
+      "alwaysOutputData": true,
+      "credentials": {
+        "redis": {
+          "id": "bi5vcaBUpUVqC5ho",
+          "name": "Redis demo inmobiliaria"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{ $json.message.chat_id }}_buffer",
+        "messageData": "={{ JSON.stringify($('Edit Fields1').item.json.message) }}",
+        "tail": true
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        176,
+        3184
+      ],
+      "id": "39eda53a-3f2a-466c-bd7e-a8f8bfd14eb6",
+      "name": "Push",
+      "executeOnce": false,
+      "alwaysOutputData": false,
+      "credentials": {
+        "redis": {
+          "id": "bi5vcaBUpUVqC5ho",
+          "name": "Redis demo inmobiliaria"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2fe98c84-14b9-4c9a-9fc0-f01c802c4d60",
+              "name": "message",
+              "value": "={{ $('Edit_Fields3').item.json.message }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1376,
+        3184
+      ],
+      "id": "6ea1bf4d-f844-4234-a512-9f46a98193bd",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawMessages = $json.message || [];\n\nconst result = rawMessages.map(str => {\n  try {\n    const parsed = JSON.parse(str);\n    return { json: parsed };\n  } catch (e) {\n    return { json: { error: 'error parsing message', raw: str } };\n  }\n});\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        3072
+      ],
+      "id": "fdd75b41-9432-4916-9449-145e018a8ea3",
+      "name": "Code",
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "749d4246-359d-4264-a947-7ae7404b92e2",
+              "name": "message.chat_id",
+              "value": "={{ $json.message.chat_id }}",
+              "type": "string"
+            },
+            {
+              "id": "5edd58dd-769e-4c5d-a6e7-e98064a08e57",
+              "name": "message.content",
+              "value": "={{ $json.message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "b8c4f9ab-9477-4431-843c-f9c68a20a87f",
+              "name": "message.audio",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "78ff392e-6e4c-427c-aac5-8c23b2e4f31f",
+              "name": "message.id",
+              "value": "={{ $json.message.chat_id }}",
+              "type": "string"
+            },
+            {
+              "id": "1a62e889-90b4-4284-9bd9-5581eaaa8d3a",
+              "name": "message.message_time",
+              "value": "={{ $json.message.message_time }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -48,
+        3184
+      ],
+      "id": "c798047c-86fa-492b-a62a-a4ad29e2e2e1",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6c99adb0-8a67-4db3-bb61-d3082b8a2ac7",
+              "name": "message",
+              "value": "={{ $('Redis GET').item.json.message }}",
+              "type": "array"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        3072
+      ],
+      "id": "28da28a7-d992-4af9-9314-6c061206f627",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        2896
+      ],
+      "id": "74ace374-6137-4d3a-8653-0158d70b40ae",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2480,
+        2928
+      ],
+      "id": "9f5dbce5-832d-43c1-a0d9-80df01256f29",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "message",
+        "key": "={{ $('Push').item.json.message.chat_id }}_buffer",
+        "keyType": "list",
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        624,
+        3184
+      ],
+      "id": "63db5d16-62d6-4337-b697-ccd173a18bf2",
+      "name": "Redis GET",
+      "alwaysOutputData": true,
+      "credentials": {
+        "redis": {
+          "id": "bi5vcaBUpUVqC5ho",
+          "name": "Redis demo inmobiliaria"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $('Edit Fields1').item.json.message.chat_id }}_buffer"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        3072
+      ],
+      "id": "d2bc346d-141d-4ccd-9f11-c3e819f86df0",
+      "name": "Redis",
+      "credentials": {
+        "redis": {
+          "id": "bi5vcaBUpUVqC5ho",
+          "name": "Redis demo inmobiliaria"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 20
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1056,
+        3280
+      ],
+      "id": "6cc2bb7a-f697-401e-8cb7-f2e61bd78705",
+      "name": "Wait3",
+      "webhookId": "cdcf123f-9f87-48ae-8dad-3caa646a23b6"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $('Edit Fields1').item.json.message.chat_id }}_buffer"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        3072
+      ],
+      "id": "02c9fc6b-f925-4898-83dc-626f37e66579",
+      "name": "Redis1",
+      "credentials": {
+        "redis": {
+          "id": "bi5vcaBUpUVqC5ho",
+          "name": "Redis demo inmobiliaria"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "content",
+              "renameField": true,
+              "outputFieldName": "mensajes"
+            },
+            {
+              "fieldToAggregate": "chat_id"
+            },
+            {
+              "fieldToAggregate": "message_time"
+            },
+            {
+              "fieldToAggregate": "audio"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1936,
+        3072
+      ],
+      "id": "0dc91421-c181-4d75-a3f3-5f17156e7b5f",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Edit Fields1').item.json.message.chat_id }}",
+                    "rightValue": "={{ $('Edit Fields1').item.json.message.chat_id }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    },
+                    "id": "no-hacer-nada"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No hacer nada"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f0927d50-030a-4c5c-872f-7d0c9587d726",
+                    "leftValue": "={{ $('Edit_Fields3').item.json.message.message_time }}",
+                    "rightValue": "={{ $now.minus(20,'seconds').toDateTime().toUTC().toISO() }}",
+                    "operator": {
+                      "type": "dateTime",
+                      "operation": "before"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Seguir2"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Esperar"
+        }
+      },
+      "id": "39072f07-0ec6-4948-b1eb-707939565ec2",
+      "name": "Switch - Buffer Control",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        848,
+        3104
+      ]
+    },
+    {
+      "parameters": {
+        "sortFieldsUi": {
+          "sortField": [
+            {
+              "fieldName": "message_time"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        3072
+      ],
+      "id": "7a4cd400-29ee-4085-8e3e-50842bb2685e",
+      "name": "Sort"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1bd5204e-ba8c-46b7-8975-466416466ba8",
+              "name": "mensajes",
+              "value": "={{ $json.mensajes.join('\\n') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1376,
+        3456
+      ],
+      "id": "a555d56a-5097-46d4-a181-b2936b3b7669",
+      "name": "Edit Fields5"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { key: $json.message.chat_id + \"_buffer\" } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        3184
+      ],
+      "id": "e030f8f8-234c-44f8-96e8-15a1e6f5929b",
+      "name": "Code3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Edit_Fields3').item.json.message.url }}/message/sendText/{{ $('Edit_Fields3').item.json.message.instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Edit_Fields3').item.json.message.apikey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Format Chain').item.json.output.Response.part_1 }}"
+            },
+            {
+              "name": "delay",
+              "value": "={{7000}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -912,
+        3680
+      ],
+      "id": "64e0d042-0ddc-4ec3-8bab-4c702225c7b4",
+      "name": "HTTP Request1",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3c7eb0e9-13ee-40d6-9738-057a02ac1306",
+              "leftValue": "={{ $('Format Chain').item.json.output.Response.part_3 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        4048
+      ],
+      "id": "225bf161-1ead-4612-b494-5aec8e46dbbd",
+      "name": "If18"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        3696
+      ],
+      "id": "4d231204-0008-4611-84bc-912f390f0c7f",
+      "name": "Wait14",
+      "webhookId": "ca0ec0a7-d536-400b-a298-bddfed37d282"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "10bc21c7-e460-458f-b0cb-d9e37e9bde8a",
+              "leftValue": "={{ $('Format Chain').item.json.output.Response.part_4 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1232,
+        4064
+      ],
+      "id": "d6c3698c-b506-4705-8542-e1ae89b52219",
+      "name": "If19"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1344,
+        3712
+      ],
+      "id": "518ccd25-686c-4d09-8d9a-4a69261f6835",
+      "name": "Wait15",
+      "webhookId": "ca0ec0a7-d536-400b-a298-bddfed37d282"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3c7eb0e9-13ee-40d6-9738-057a02ac1306",
+              "leftValue": "={{ $('Format Chain').item.json.output.Response.part_5 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2000,
+        4080
+      ],
+      "id": "f7e621c7-4378-42db-8889-ff2b4c1dffcf",
+      "name": "If20"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2112,
+        3696
+      ],
+      "id": "f3e58a9f-1782-408b-ad3d-ae2fb6160f38",
+      "name": "Wait17",
+      "webhookId": "ca0ec0a7-d536-400b-a298-bddfed37d282"
+    },
+    {
+      "parameters": {
+        "amount": 8
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -272,
+        3680
+      ],
+      "id": "41688a56-e3a0-478e-9cf9-a17f85cab8b8",
+      "name": "Wait4",
+      "webhookId": "ca0ec0a7-d536-400b-a298-bddfed37d282"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Edit_Fields3').item.json.message.url }}/message/sendText/{{ $('Edit_Fields3').item.json.message.instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Edit_Fields3').item.json.message.apikey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Format Chain').item.json.output.Response.part_2 }}"
+            },
+            {
+              "name": "delay",
+              "value": "={{7000}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -96,
+        3680
+      ],
+      "id": "766c4ad9-e8e8-4fa1-a478-c121a935da49",
+      "name": "HTTP Request6",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Edit_Fields3').item.json.message.url }}/message/sendText/{{ $('Edit_Fields3').item.json.message.instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Edit_Fields3').item.json.message.apikey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Format Chain').item.json.output.Response.part_3 }}"
+            },
+            {
+              "name": "delay",
+              "value": "={{7000}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        736,
+        3696
+      ],
+      "id": "a15d2a33-2f1b-4c34-b049-cb5caef4f96c",
+      "name": "HTTP Request7",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Edit_Fields3').item.json.message.url }}/message/sendText/{{ $('Edit_Fields3').item.json.message.instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Edit_Fields3').item.json.message.apikey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Format Chain').item.json.output.Response.part_4 }}"
+            },
+            {
+              "name": "delay",
+              "value": "={{7000}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1536,
+        3712
+      ],
+      "id": "2def9498-88b6-483c-b207-01dce5eee408",
+      "name": "HTTP Request8",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Edit_Fields3').item.json.message.url }}/message/sendText/{{ $('Edit_Fields3').item.json.message.instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Edit_Fields3').item.json.message.apikey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Format Chain').item.json.output.Response.part_5 }}"
+            },
+            {
+              "name": "delay",
+              "value": "={{7000}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2272,
+        3696
+      ],
+      "id": "a950e47a-c815-42c2-a52c-2c59c4ac3cd1",
+      "name": "HTTP Request9",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Edit_Fields3').item.json.message.url }}/message/sendText/{{ $('Edit_Fields3').item.json.message.instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Edit_Fields3').item.json.message.apikey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.output.Response.part_1 }}"
+            },
+            {
+              "name": "delay",
+              "value": "={{7000}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -944,
+        4224
+      ],
+      "id": "616a41f5-7410-4137-ad83-62389c524a63",
+      "name": "HTTP Request3",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -480,
+        3280
+      ],
+      "id": "cd557c86-2f2b-41e0-b72b-6b699269d7cb",
+      "name": "OpenAI1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "CCKwKIc6Rg7AOinG",
+          "name": "demos chat on"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8d46d583-b82d-4d85-a0b8-2c30006082a0",
+              "leftValue": "={{ $('Format Chain').item.json.output.Response.part_2 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -384,
+        4032
+      ],
+      "id": "b2598578-76d3-486a-9b56-89163f841dd9",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA",
+          "mode": "list",
+          "cachedResultName": "demo-inmobiliarias",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1445802237,
+          "mode": "list",
+          "cachedResultName": "historial_conversaciones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit#gid=1445802237"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha y hora": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+            "Teléfono": "={{ ($json.message.chat_id || '').replace(/@.*/, '') }}",
+            "Dirección": "entrante",
+            "Autor": "Cliente",
+            "Mensaje": "={{ $json.message.content }}",
+            "Instancia": "={{ $('Edit_Fields3').item.json.message.instance }}",
+            "ID Cliente": "={{ $json.message.chat_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID Cliente",
+              "displayName": "ID Cliente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Fecha y hora",
+              "displayName": "Fecha y hora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Teléfono",
+              "displayName": "Teléfono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Dirección",
+              "displayName": "Dirección",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Autor",
+              "displayName": "Autor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Mensaje",
+              "displayName": "Mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Instancia",
+              "displayName": "Instancia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        176,
+        3024
+      ],
+      "id": "67bc28de-b797-4ae6-b225-36fb858e7e0d",
+      "name": "Historial Entrante",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "brlgpJUp82pkG28u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA",
+          "mode": "list",
+          "cachedResultName": "demo-inmobiliarias",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1445802237,
+          "mode": "list",
+          "cachedResultName": "historial_conversaciones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit#gid=1445802237"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha y hora": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+            "Teléfono": "={{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}",
+            "Dirección": "saliente",
+            "Autor": "Liz Ortega",
+            "Mensaje": "={{ $json.output }}",
+            "Instancia": "={{ $('Edit_Fields3').item.json.message.instance }}",
+            "ID Cliente": "={{ $('Edit_Fields3').item.json.message.chat_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID Cliente",
+              "displayName": "ID Cliente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Fecha y hora",
+              "displayName": "Fecha y hora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Teléfono",
+              "displayName": "Teléfono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Dirección",
+              "displayName": "Dirección",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Autor",
+              "displayName": "Autor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Mensaje",
+              "displayName": "Mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Instancia",
+              "displayName": "Instancia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1680,
+        3744
+      ],
+      "id": "3f0e2966-2288-4fba-bc02-ea6e5c86b14f",
+      "name": "Historial Saliente",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "brlgpJUp82pkG28u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Usa esta herramienta para buscar propiedades reales en la base de datos cuando ya tengas al menos algunos criterios útiles del cliente.\n\nObjetivo:\nRecibir criterios de búsqueda ya estructurados, consultar la base de propiedades mediante un subworkflow y devolver solo las mejores coincidencias para que luego puedas presentarlas de forma comercial.\n\nCuándo usarla:\n- cuando el cliente ya indicó si busca comprar o rentar, o al menos dio una intención aproximada\n- cuando ya conoces tipo de propiedad, zona, presupuesto o alguna combinación suficiente para buscar\n- cuando necesitas responder con opciones concretas sin improvisar\n\nReglas:\n- no la uses si aún no tienes información mínima útil para buscar\n- si falta un dato crítico para hacer una búsqueda razonable, primero pide ese dato\n- usa esta herramienta para obtener coincidencias concretas, no para inventar sugerencias\n- después de recibir resultados, presenta máximo 3 opciones por turno\n- si no hay coincidencias exactas, usa las opciones más cercanas que devuelva la herramienta\n- si la herramienta no devuelve resultados suficientes, indícalo con claridad y orienta la conversación a ajustar criterios o a seguimiento humano",
+        "workflowId": {
+          "__rl": true,
+          "value": "0jj5f2yETJsORzdT-GoZl",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/0jj5f2yETJsORzdT-GoZl",
+          "cachedResultName": "WF - Buscar Propiedades"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "tipo_operacion": "={{ $fromAI('tipo_operacion', 'Compra o renta', 'string') }}",
+            "tipo_propiedad": "={{ $fromAI('tipo_propiedad', 'Casa, departamento, terreno, local, etc.', 'string') }}",
+            "ubicacion": "={{ $fromAI('ubicacion', 'Zona, colonia, ciudad o ubicación deseada', 'string') }}",
+            "presupuesto_min": "={{ $fromAI('presupuesto_min', 'Presupuesto mínimo', 'string') }}",
+            "presupuesto_max": "={{ $fromAI('presupuesto_max', 'Presupuesto máximo', 'string') }}",
+            "habitaciones": "={{ $fromAI('habitaciones', 'Número de habitaciones deseadas', 'string') }}",
+            "banos": "={{ $fromAI('banos', 'Número de baños deseados', 'string') }}",
+            "tamano_min": "={{ $fromAI('tamano_min', 'Tamaño mínimo en m²', 'string') }}",
+            "preferencias": "={{ $fromAI('preferencias', 'Extras o preferencias como alberca, jardín, elevador, estacionamiento, etc.', 'string') }}",
+            "limite": "={{ $fromAI('limite', 'Máximo de resultados a devolver', 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "tipo_operacion",
+              "displayName": "tipo_operacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "tipo_propiedad",
+              "displayName": "tipo_propiedad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "ubicacion",
+              "displayName": "ubicacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "presupuesto_min",
+              "displayName": "presupuesto_min",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "presupuesto_max",
+              "displayName": "presupuesto_max",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "habitaciones",
+              "displayName": "habitaciones",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "banos",
+              "displayName": "banos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "tamano_min",
+              "displayName": "tamano_min",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "preferencias",
+              "displayName": "preferencias",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "limite",
+              "displayName": "limite",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -2400,
+        4144
+      ],
+      "id": "7289ef03-b036-4d4d-9bce-5edbc86cf2ae",
+      "name": "Call 'WF - Buscar Propiedades'"
+    },
+    {
+      "parameters": {
+        "operation": "deleteTable",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "histories",
+          "mode": "list",
+          "cachedResultName": "histories"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2592,
+        3264
+      ],
+      "id": "3ff12789-7685-4a02-b005-678a9294390a",
+      "name": "Delete table or rows",
+      "credentials": {
+        "postgres": {
+          "id": "s6XSKW4k3Uom2JUr",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = ($json.output || '').toString().trim();\n\nconst maxLen = 350;\nconst maxParts = 5;\n\nfunction splitTextPreservingMeaning(input, maxLen) {\n  if (!input) return [];\n\n  const paragraphs = input\n    .split(/\\n{2,}/)\n    .map(p => p.trim())\n    .filter(Boolean);\n\n  const chunks = [];\n\n  for (const paragraph of paragraphs) {\n    if (paragraph.length <= maxLen) {\n      chunks.push(paragraph);\n      continue;\n    }\n\n    const sentences = paragraph.match(/[^.!?]+[.!?]?/g) || [paragraph];\n    let current = '';\n\n    for (const sentence of sentences) {\n      const s = sentence.trim();\n      if (!s) continue;\n\n      if ((current + ' ' + s).trim().length <= maxLen) {\n        current = (current + ' ' + s).trim();\n      } else {\n        if (current) chunks.push(current);\n\n        if (s.length <= maxLen) {\n          current = s;\n        } else {\n          // Si una sola oración supera el límite, partir por longitud\n          for (let i = 0; i < s.length; i += maxLen) {\n            chunks.push(s.slice(i, i + maxLen).trim());\n          }\n          current = '';\n        }\n      }\n    }\n\n    if (current) chunks.push(current);\n  }\n\n  return chunks;\n}\n\nlet parts = splitTextPreservingMeaning(text, maxLen).slice(0, maxParts);\n\n// Si sobran partes, las unimos en la última\nif (splitTextPreservingMeaning(text, maxLen).length > maxParts) {\n  const all = splitTextPreservingMeaning(text, maxLen);\n  parts = all.slice(0, maxParts - 1);\n  parts.push(all.slice(maxParts - 1).join('\\n\\n'));\n}\n\n// Rellenar hasta 5 partes\nwhile (parts.length < maxParts) {\n  parts.push('');\n}\n\nreturn [\n  {\n    json: {\n      output: {\n        Response: {\n          part_1: parts[0],\n          part_2: parts[1],\n          part_3: parts[2],\n          part_4: parts[3],\n          part_5: parts[4],\n        }\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1680,
+        3920
+      ],
+      "id": "878bd9f6-73e1-4175-abf4-89603e70ab72",
+      "name": "Format Chain"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "53Xv-LMTZPNzCpauMY9ZN",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/53Xv-LMTZPNzCpauMY9ZN",
+          "cachedResultName": "WF - Enviar WhatsApp Seguro"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "attempt": "={{ 1 }}",
+            "base_url": "{{ $('Edit_Fields3').item.json.message.url }}",
+            "instance": "{{ $('Edit_Fields3').item.json.message.instance }}",
+            "apikey": "{{ $('Edit_Fields3').item.json.message.apikey }}",
+            "number": "{{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}",
+            "text": "={{ $('Format Chain').item.json.output.Response.part_1 }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "base_url",
+              "displayName": "base_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "instance",
+              "displayName": "instance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "apikey",
+              "displayName": "apikey",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "number",
+              "displayName": "number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "text",
+              "displayName": "text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "attempt",
+              "displayName": "attempt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": "={{ true }}"
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -720,
+        3904
+      ],
+      "id": "30f5dd00-69a0-4a90-93ea-a9ae1f2b093e",
+      "name": "Call 'WF - Enviar WhatsApp Seguro'"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b41b2922-0ecf-401b-b0ed-b32be4869c4e",
+              "leftValue": "={{    !JSON.stringify($json).toLowerCase().includes('connection closed') &&   !JSON.stringify($json).toLowerCase().includes('bad request') &&   !JSON.stringify($json).toLowerCase().includes('error') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -720,
+        3680
+      ],
+      "id": "894107b1-011f-4de5-818d-943e4c48c131",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b41b2922-0ecf-401b-b0ed-b32be4869c4e",
+              "leftValue": "={{    !JSON.stringify($json).toLowerCase().includes('connection closed') &&   !JSON.stringify($json).toLowerCase().includes('bad request') &&   !JSON.stringify($json).toLowerCase().includes('error') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        96,
+        3680
+      ],
+      "id": "597f1b54-6c11-4a31-b50e-a906f3fccf34",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "53Xv-LMTZPNzCpauMY9ZN",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/53Xv-LMTZPNzCpauMY9ZN",
+          "cachedResultName": "WF - Enviar WhatsApp Seguro"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "attempt": "={{ 1 }}",
+            "base_url": "{{ $('Edit_Fields3').item.json.message.url }}",
+            "instance": "{{ $('Edit_Fields3').item.json.message.instance }}",
+            "apikey": "{{ $('Edit_Fields3').item.json.message.apikey }}",
+            "number": "{{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}",
+            "text": "={{ $('Format Chain').item.json.output.Response.part_2 }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "base_url",
+              "displayName": "base_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "instance",
+              "displayName": "instance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "apikey",
+              "displayName": "apikey",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "number",
+              "displayName": "number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "text",
+              "displayName": "text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "attempt",
+              "displayName": "attempt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": "={{ true }}"
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        112,
+        3888
+      ],
+      "id": "6a2d613d-fa45-44e5-b9f5-4642fc13e2d9",
+      "name": "Call 'WF - Enviar WhatsApp Seguro'1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b41b2922-0ecf-401b-b0ed-b32be4869c4e",
+              "leftValue": "={{    !JSON.stringify($json).toLowerCase().includes('connection closed') &&   !JSON.stringify($json).toLowerCase().includes('bad request') &&   !JSON.stringify($json).toLowerCase().includes('error') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        928,
+        3696
+      ],
+      "id": "5954b786-4d89-47ac-aaf2-313368f4af3c",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "53Xv-LMTZPNzCpauMY9ZN",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/53Xv-LMTZPNzCpauMY9ZN",
+          "cachedResultName": "WF - Enviar WhatsApp Seguro"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "attempt": "={{ 1 }}",
+            "base_url": "{{ $('Edit_Fields3').item.json.message.url }}",
+            "instance": "{{ $('Edit_Fields3').item.json.message.instance }}",
+            "apikey": "{{ $('Edit_Fields3').item.json.message.apikey }}",
+            "number": "{{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}",
+            "text": "={{ $('Format Chain').item.json.output.Response.part_3 }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "base_url",
+              "displayName": "base_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "instance",
+              "displayName": "instance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "apikey",
+              "displayName": "apikey",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "number",
+              "displayName": "number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "text",
+              "displayName": "text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "attempt",
+              "displayName": "attempt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": "={{ true }}"
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        928,
+        3920
+      ],
+      "id": "6d8e6f8b-09eb-45e3-ba42-274ee004a63d",
+      "name": "Call 'WF - Enviar WhatsApp Seguro'2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b41b2922-0ecf-401b-b0ed-b32be4869c4e",
+              "leftValue": "={{    !JSON.stringify($json).toLowerCase().includes('connection closed') &&   !JSON.stringify($json).toLowerCase().includes('bad request') &&   !JSON.stringify($json).toLowerCase().includes('error') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1728,
+        3712
+      ],
+      "id": "2fadd142-d364-456d-acf3-78e3c1788166",
+      "name": "If5"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "53Xv-LMTZPNzCpauMY9ZN",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/53Xv-LMTZPNzCpauMY9ZN",
+          "cachedResultName": "WF - Enviar WhatsApp Seguro"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "attempt": "={{ 1 }}",
+            "base_url": "{{ $('Edit_Fields3').item.json.message.url }}",
+            "instance": "{{ $('Edit_Fields3').item.json.message.instance }}",
+            "apikey": "{{ $('Edit_Fields3').item.json.message.apikey }}",
+            "number": "{{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}",
+            "text": "={{ $('Format Chain').item.json.output.Response.part_4 }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "base_url",
+              "displayName": "base_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "instance",
+              "displayName": "instance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "apikey",
+              "displayName": "apikey",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "number",
+              "displayName": "number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "text",
+              "displayName": "text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "attempt",
+              "displayName": "attempt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": "={{ true }}"
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1744,
+        3920
+      ],
+      "id": "fc4642b4-3d63-46eb-8a5f-8cd9d3d68106",
+      "name": "Call 'WF - Enviar WhatsApp Seguro'3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b41b2922-0ecf-401b-b0ed-b32be4869c4e",
+              "leftValue": "={{    !JSON.stringify($json).toLowerCase().includes('connection closed') &&   !JSON.stringify($json).toLowerCase().includes('bad request') &&   !JSON.stringify($json).toLowerCase().includes('error') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2448,
+        3696
+      ],
+      "id": "73d0d033-29aa-4ec3-b9f9-c9fe98f75b98",
+      "name": "If6"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "53Xv-LMTZPNzCpauMY9ZN",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/53Xv-LMTZPNzCpauMY9ZN",
+          "cachedResultName": "WF - Enviar WhatsApp Seguro"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "attempt": "={{ 1 }}",
+            "base_url": "{{ $('Edit_Fields3').item.json.message.url }}",
+            "instance": "{{ $('Edit_Fields3').item.json.message.instance }}",
+            "apikey": "{{ $('Edit_Fields3').item.json.message.apikey }}",
+            "number": "{{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}",
+            "text": "={{ $('Format Chain').item.json.output.Response.part_5 }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "base_url",
+              "displayName": "base_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "instance",
+              "displayName": "instance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "apikey",
+              "displayName": "apikey",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "number",
+              "displayName": "number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "text",
+              "displayName": "text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "attempt",
+              "displayName": "attempt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": "={{ true }}"
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2432,
+        3904
+      ],
+      "id": "a1ee4a89-6bdf-4f2a-ae6c-a8e47bdf0360",
+      "name": "Call 'WF - Enviar WhatsApp Seguro'4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b41b2922-0ecf-401b-b0ed-b32be4869c4e",
+              "leftValue": "={{    !JSON.stringify($json).toLowerCase().includes('connection closed') &&   !JSON.stringify($json).toLowerCase().includes('bad request') &&   !JSON.stringify($json).toLowerCase().includes('error') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -768,
+        4224
+      ],
+      "id": "ace61b71-275d-4fe3-b3d7-369841cc186e",
+      "name": "If7"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "53Xv-LMTZPNzCpauMY9ZN",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/53Xv-LMTZPNzCpauMY9ZN",
+          "cachedResultName": "WF - Enviar WhatsApp Seguro"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "attempt": "={{ 1 }}",
+            "base_url": "{{ $('Edit_Fields3').item.json.message.url }}",
+            "instance": "{{ $('Edit_Fields3').item.json.message.instance }}",
+            "apikey": "{{ $('Edit_Fields3').item.json.message.apikey }}",
+            "number": "{{ $('Edit_Fields3').item.json.message.chat_id.replace(/@.*/, '') }}",
+            "text": "={{ $('Format Chain').item.json.output.Response.part_1 }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "base_url",
+              "displayName": "base_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "instance",
+              "displayName": "instance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "apikey",
+              "displayName": "apikey",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "number",
+              "displayName": "number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "text",
+              "displayName": "text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "attempt",
+              "displayName": "attempt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": "={{ true }}"
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -752,
+        4448
+      ],
+      "id": "1622d1a4-7680-495f-a0a1-d610ed57117a",
+      "name": "Call 'WF - Enviar WhatsApp Seguro'5"
+    }
+  ],
+  "connections": {
+    "Ver Disponibilidad": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de IA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Cita": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de IA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modificar Cita": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de IA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de IA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de IA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente de IA",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente de IA": {
+      "main": [
+        [
+          {
+            "node": "Historial Saliente",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Format Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de IA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Datos": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de IA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Edit_Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto-fixing Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Format Chain2",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model7": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Auto-fixing Output Parser2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model8": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Format Chain2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Chain2": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory2": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente de IA",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "OpenAI1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields14": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verifica Quien Escribe": {
+      "main": [
+        [
+          {
+            "node": "Verificar Palabra Clave",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verificacion de Bloqueo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Palabra Clave": {
+      "main": [
+        [
+          {
+            "node": "Activar Bot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Bloquea al Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bloquea al Agente": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificacion de Bloqueo": {
+      "main": [
+        [
+          {
+            "node": "Verifica el estado de la sesión",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Auto-fixing Output Parser2",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields14",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields6": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verifica el estado de la sesión": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit_Fields3": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Push",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Historial Entrante",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Verifica Quien Escribe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis GET": {
+      "main": [
+        [
+          {
+            "node": "Switch - Buffer Control",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis": {
+      "main": [
+        [
+          {
+            "node": "Redis1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait3": {
+      "main": [
+        [
+          {
+            "node": "Redis GET",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis1": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Sort",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Buffer Control": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sort": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields5": {
+      "main": [
+        [
+          {
+            "node": "Agente de IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "Redis GET",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If18": {
+      "main": [
+        [
+          {
+            "node": "Wait14",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If19",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait14": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If19": {
+      "main": [
+        [
+          {
+            "node": "Wait15",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If20",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait15": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If20": {
+      "main": [
+        [
+          {
+            "node": "Wait17",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait17": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request6": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request7": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request8": {
+      "main": [
+        [
+          {
+            "node": "If5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request9": {
+      "main": [
+        [
+          {
+            "node": "If6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "If7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Wait4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If18",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'WF - Buscar Propiedades'": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de IA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Chain": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'WF - Enviar WhatsApp Seguro'": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'WF - Enviar WhatsApp Seguro'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "If18",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'WF - Enviar WhatsApp Seguro'1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'WF - Enviar WhatsApp Seguro'1": {
+      "main": [
+        []
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "If19",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'WF - Enviar WhatsApp Seguro'2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'WF - Enviar WhatsApp Seguro'2": {
+      "main": [
+        [
+          {
+            "node": "If19",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If5": {
+      "main": [
+        [
+          {
+            "node": "If20",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'WF - Enviar WhatsApp Seguro'3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'WF - Enviar WhatsApp Seguro'3": {
+      "main": [
+        [
+          {
+            "node": "If20",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If6": {
+      "main": [
+        [
+          {
+            "node": "Call 'WF - Enviar WhatsApp Seguro'4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "If7": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Call 'WF - Enviar WhatsApp Seguro'5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "Format Chain2": [
+      {
+        "output": {
+          "Response": {
+            "part_1": "Mi nombre es Assistant.",
+            "part_2": "",
+            "part_3": "",
+            "part_4": "",
+            "part_5": ""
+          }
+        }
+      }
+    ]
+  },
+  "meta": {
+    "instanceId": "82915d6284021ae316fa922b02405245da9d230ae25a4604189ab9cf7292c161"
+  }
+}
