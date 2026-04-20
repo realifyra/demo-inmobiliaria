@@ -1,0 +1,1677 @@
+
+/**
+ * Shortcode:
+ * [chaton_propiedades_listado]
+ *
+ * Incluye:
+ * - Filtros avanzados
+ * - Modal de detalle mejorado
+ * - Integración con popup externo para alta/edición
+ * - Cambio visual entre "Alta de propiedad" y "Editar propiedad"
+ * - Copiar / compartir por WhatsApp
+ * - Estatus Archivada en filtro y formulario
+ * - Oculta Archivadas del listado general por defecto
+ * - Eliminación definitiva con confirmación fuerte
+ */
+
+if ( ! function_exists('chaton_user_can_manage_properties') ) {
+    function chaton_user_can_manage_properties() {
+        if ( ! is_user_logged_in() ) {
+            return false;
+        }
+
+        $user = wp_get_current_user();
+        $allowed_roles = array('administrator', 'asesor', 'demo');
+
+        if ( empty($user->roles) ) {
+            return false;
+        }
+
+        foreach ( $user->roles as $role ) {
+            if ( in_array($role, $allowed_roles, true) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+if ( ! function_exists('chaton_propiedades_listado_shortcode') ) {
+    function chaton_propiedades_listado_shortcode() {
+
+        if ( ! is_user_logged_in() ) {
+            $login_url = wp_login_url( get_permalink() );
+            return '<div class="chaton-access-box"><p>Debes iniciar sesión para ver el listado de propiedades.</p><a class="chaton-btn-primary" href="' . esc_url($login_url) . '">Iniciar sesión</a></div>';
+        }
+
+        if ( ! chaton_user_can_manage_properties() ) {
+            return '<div class="chaton-access-box"><p>Acceso restringido. Solo Administrador, Asesor y Demo pueden ver y modificar propiedades desde este módulo.</p></div>';
+        }
+
+        // IMPORTANTE: cambia estas URLs por las tuyas
+        $list_endpoint   = 'https://realify-n8n-new.qagjha.easypanel.host/webhook/propiedades-list';
+        $delete_endpoint = 'https://realify-n8n-new.qagjha.easypanel.host/webhook/propiedades-upsert';
+
+        ob_start();
+        ?>
+        <div class="chaton-list-wrap">
+            <div class="chaton-list-header">
+                <div>
+                    <span class="chaton-list-badge">Catálogo interno</span>
+                    <h2>Propiedades registradas</h2>
+                    <p>Consulta, filtra, revisa a detalle y precarga una propiedad en el formulario para editarla.</p>
+                </div>
+                <div class="chaton-list-count" id="chaton-props-count">0 propiedades</div>
+            </div>
+
+            <div class="chaton-list-toolbar chaton-list-toolbar-advanced">
+                <div class="chaton-search-box">
+                    <input type="text" id="chaton-props-search" placeholder="Buscar por nombre, ID, ciudad, zona o asesor...">
+                </div>
+
+                <div class="chaton-filter-box">
+                    <select id="chaton-props-status-filter">
+                        <option value="">Todos los estatus activos</option>
+                        <option value="Disponible">Disponible</option>
+                        <option value="Apartada">Apartada</option>
+                        <option value="Vendida">Vendida</option>
+                        <option value="Rentada">Rentada</option>
+                        <option value="Inactiva">Inactiva</option>
+                        <option value="Archivada">Archivada</option>
+                    </select>
+                </div>
+
+                <div class="chaton-filter-box">
+                    <select id="chaton-props-operation-filter">
+                        <option value="">Todas las operaciones</option>
+                        <option value="Venta">Venta</option>
+                        <option value="Renta">Renta</option>
+                        <option value="Traspaso">Traspaso</option>
+                    </select>
+                </div>
+
+                <div class="chaton-filter-box">
+                    <select id="chaton-props-city-filter">
+                        <option value="">Todas las ciudades</option>
+                    </select>
+                </div>
+
+                <div class="chaton-filter-box">
+                    <select id="chaton-props-type-filter">
+                        <option value="">Todos los tipos</option>
+                    </select>
+                </div>
+
+                <div class="chaton-filter-box">
+                    <select id="chaton-props-advisor-filter">
+                        <option value="">Todos los asesores</option>
+                    </select>
+                </div>
+
+                <div class="chaton-filter-box">
+                    <button type="button" class="chaton-btn-secondary" id="chaton-props-refresh">Actualizar listado</button>
+                </div>
+            </div>
+
+            <div id="chaton-props-status" class="chaton-list-status"></div>
+
+            <div class="chaton-table-wrap">
+                <table class="chaton-props-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Propiedad</th>
+                            <th>Tipo</th>
+                            <th>Operación</th>
+                            <th>Ubicación</th>
+                            <th>Precio</th>
+                            <th>Estatus</th>
+                            <th>Asesor</th>
+                            <th>Actualizado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="chaton-props-tbody">
+                        <tr>
+                            <td colspan="10">Cargando propiedades...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="chaton-cards-grid" id="chaton-props-cards"></div>
+        </div>
+
+        <div class="chaton-modal-overlay" id="chaton-prop-modal" hidden>
+            <div class="chaton-modal-card">
+                <div class="chaton-modal-header">
+                    <div>
+                        <span class="chaton-list-badge">Detalle de propiedad</span>
+                        <h3 id="chaton-prop-modal-title">Propiedad</h3>
+                    </div>
+                    <button type="button" class="chaton-modal-close" id="chaton-prop-modal-close">×</button>
+                </div>
+
+                <div class="chaton-modal-body" id="chaton-prop-modal-body"></div>
+
+                <div class="chaton-modal-footer">
+                    <button type="button" class="chaton-btn-detail" id="chaton-prop-modal-footer-close">Cerrar</button>
+                    <button type="button" class="chaton-btn-small" id="chaton-prop-copy-btn">Copiar texto</button>
+                    <button type="button" class="chaton-btn-primary" id="chaton-prop-wa-btn">Enviar por WhatsApp</button>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .chaton-list-wrap {
+    width: 100%;
+    max-width: none;
+    margin: 28px auto 0;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 1px solid #e8edf3;
+    border-radius: 22px;
+    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+    padding: 28px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+            .chaton-access-box {
+                max-width: 760px;
+                margin: 30px auto;
+                background: #ffffff;
+                border: 1px solid #e8edf3;
+                border-radius: 18px;
+                padding: 24px;
+                text-align: center;
+                box-shadow: 0 12px 35px rgba(15, 23, 42, 0.06);
+            }
+
+            .chaton-list-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 18px;
+                margin-bottom: 20px;
+            }
+
+            .chaton-list-header h2 {
+                margin: 10px 0 8px;
+                font-size: 30px;
+                line-height: 1.1;
+                color: #0f172a;
+            }
+
+            .chaton-list-header p {
+                margin: 0;
+                color: #475569;
+                font-size: 15px;
+            }
+
+            .chaton-list-badge {
+                display: inline-flex;
+                align-items: center;
+                background: #eff6ff;
+                color: #1d4ed8;
+                border: 1px solid #dbeafe;
+                padding: 7px 12px;
+                border-radius: 999px;
+                font-size: 12px;
+                font-weight: 700;
+            }
+
+            .chaton-list-count {
+                white-space: nowrap;
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                color: #0f172a;
+                padding: 10px 14px;
+                border-radius: 999px;
+                font-size: 13px;
+                font-weight: 700;
+            }
+
+            .chaton-list-toolbar {
+                display: grid;
+                gap: 12px;
+                margin-bottom: 18px;
+            }
+
+            .chaton-list-toolbar-advanced {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 12px;
+                align-items: stretch;
+            }
+
+            .chaton-list-toolbar-advanced .chaton-search-box {
+                grid-column: span 2;
+            }
+
+            .chaton-list-toolbar-advanced .chaton-search-box,
+            .chaton-list-toolbar-advanced .chaton-filter-box {
+                min-width: 0;
+            }
+
+            .chaton-search-box input,
+            .chaton-filter-box select,
+            .chaton-filter-box button {
+                width: 100%;
+                min-width: 0;
+                min-height: 46px;
+                border-radius: 12px;
+                padding: 12px 14px;
+                font-size: 14px;
+                box-sizing: border-box;
+                outline: none;
+            }
+
+            .chaton-search-box input,
+            .chaton-filter-box select {
+                border: 1px solid #d9e2ec;
+                color: #0f172a;
+                background: #ffffff;
+            }
+
+            .chaton-search-box input:focus,
+            .chaton-filter-box select:focus {
+                border-color: #14b8a6;
+                box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.10);
+            }
+
+            .chaton-btn-primary,
+            .chaton-btn-secondary,
+            .chaton-btn-danger,
+            .chaton-btn-small,
+            .chaton-btn-detail {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border: none;
+                border-radius: 999px;
+                cursor: pointer;
+                font-weight: 700;
+                text-decoration: none !important;
+                transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+            }
+
+            .chaton-btn-primary {
+                min-height: 48px;
+                padding: 12px 20px;
+                background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+                color: #ffffff !important;
+                box-shadow: 0 10px 22px rgba(20, 184, 166, 0.18);
+            }
+
+            .chaton-btn-secondary {
+                width: 100%;
+                min-height: 46px;
+                padding: 12px 16px;
+                background: #ecfeff;
+                color: #0f766e;
+                border: 1px solid #ccfbf1;
+            }
+
+            .chaton-btn-danger {
+                min-height: 38px;
+                padding: 9px 14px;
+                background: #fef2f2;
+                color: #b91c1c;
+                border: 1px solid #fecaca;
+            }
+
+            .chaton-btn-small {
+                min-height: 38px;
+                padding: 9px 14px;
+                background: #eef2ff;
+                color: #3730a3;
+                border: 1px solid #c7d2fe;
+            }
+
+            .chaton-btn-detail {
+                min-height: 38px;
+                padding: 9px 14px;
+                background: #f8fafc;
+                color: #0f172a;
+                border: 1px solid #e2e8f0;
+            }
+
+            .chaton-btn-secondary:hover,
+            .chaton-btn-danger:hover,
+            .chaton-btn-small:hover,
+            .chaton-btn-detail:hover,
+            .chaton-btn-primary:hover {
+                transform: translateY(-1px);
+            }
+
+            .chaton-list-status {
+                margin-bottom: 14px;
+                font-size: 14px;
+                font-weight: 600;
+            }
+
+            .chaton-list-status.ok { color: #15803d; }
+            .chaton-list-status.error { color: #b91c1c; }
+
+            .chaton-table-wrap {
+                overflow-x: auto;
+                border: 1px solid #edf2f7;
+                border-radius: 18px;
+            }
+
+            .chaton-props-table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 1260px;
+            }
+
+            .chaton-props-table thead th {
+                background: #f8fafc;
+                color: #334155;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: .5px;
+                text-align: left;
+                padding: 14px 12px;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .chaton-props-table tbody td {
+                padding: 14px 12px;
+                border-bottom: 1px solid #eef2f7;
+                vertical-align: top;
+                color: #0f172a;
+                font-size: 14px;
+            }
+
+            .chaton-props-table tbody tr:hover {
+                background: #fcfcfd;
+            }
+
+            .chaton-status-pill {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 999px;
+                padding: 6px 10px;
+                font-size: 12px;
+                font-weight: 700;
+                line-height: 1;
+            }
+
+            .chaton-status-pill.disponible {
+                background: #ecfdf5;
+                color: #15803d;
+            }
+
+            .chaton-status-pill.apartada {
+                background: #fff7ed;
+                color: #c2410c;
+            }
+
+            .chaton-status-pill.vendida,
+            .chaton-status-pill.rentada {
+                background: #eff6ff;
+                color: #1d4ed8;
+            }
+
+            .chaton-status-pill.inactiva {
+                background: #f1f5f9;
+                color: #475569;
+            }
+
+            .chaton-status-pill.archivada {
+                background: #f3e8ff;
+                color: #7e22ce;
+            }
+
+            .chaton-row-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .chaton-cards-grid {
+                display: none;
+                grid-template-columns: 1fr;
+                gap: 14px;
+                margin-top: 16px;
+            }
+
+            .chaton-prop-card {
+                border: 1px solid #e8edf3;
+                border-radius: 18px;
+                background: #ffffff;
+                padding: 18px;
+                box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+            }
+
+            .chaton-prop-card h4 {
+                margin: 0 0 8px;
+                font-size: 18px;
+                color: #0f172a;
+            }
+
+            .chaton-prop-card p {
+                margin: 0 0 8px;
+                color: #475569;
+                font-size: 14px;
+            }
+
+            .chaton-prop-card .chaton-card-meta {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px 12px;
+                margin: 14px 0;
+            }
+
+            .chaton-prop-card .chaton-card-meta div {
+                font-size: 13px;
+                color: #0f172a;
+            }
+
+            .chaton-prop-card .chaton-card-meta strong {
+                display: block;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: .4px;
+                color: #64748b;
+                margin-bottom: 3px;
+            }
+
+            .chaton-card-actions {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                margin-top: 12px;
+            }
+
+            .chaton-modal-overlay[hidden] {
+                display: none !important;
+            }
+
+            body.chaton-detail-modal-open .chaton-open-prop-popup,
+            body.chaton-detail-modal-open .chaton-open-prop-popup * {
+                opacity: 0 !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+            }
+
+            .chaton-modal-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.55);
+                z-index: 999999 !important;
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+                overflow-y: auto;
+                padding: 140px 20px 60px;
+            }
+
+            .chaton-modal-card {
+                width: min(980px, 100%);
+                max-height: calc(100dvh - 210px);
+                overflow: auto;
+                background: #ffffff;
+                border-radius: 22px;
+                border: 1px solid #e8edf3;
+                box-shadow: 0 25px 60px rgba(15, 23, 42, 0.20);
+                padding: 24px;
+                margin: 0 auto;
+            }
+
+            .chaton-modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 16px;
+                margin-bottom: 18px;
+                position: sticky;
+                top: 0;
+                background: #ffffff;
+                z-index: 5;
+                padding-bottom: 8px;
+            }
+
+            .chaton-modal-header h3 {
+                margin: 10px 0 0;
+                font-size: 28px;
+                line-height: 1.1;
+                color: #0f172a;
+            }
+
+            .chaton-modal-close {
+                width: 42px;
+                height: 42px;
+                border-radius: 999px;
+                border: 1px solid #e2e8f0;
+                background: #ffffff;
+                color: #0f172a;
+                font-size: 24px;
+                cursor: pointer;
+                flex-shrink: 0;
+            }
+
+            .chaton-modal-body {
+                display: grid;
+                gap: 18px;
+            }
+
+            .chaton-modal-footer {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-top: 20px;
+                padding-top: 14px;
+                border-top: 1px solid #e8edf3;
+                position: sticky;
+                bottom: 0;
+                background: #ffffff;
+                z-index: 5;
+            }
+
+            .chaton-detail-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 14px 18px;
+            }
+
+            .chaton-detail-item {
+                background: #f8fafc;
+                border: 1px solid #e8edf3;
+                border-radius: 14px;
+                padding: 12px 14px;
+            }
+
+            .chaton-detail-item strong {
+                display: block;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: .4px;
+                color: #64748b;
+                margin-bottom: 4px;
+            }
+
+            .chaton-detail-item span,
+            .chaton-detail-item a {
+                font-size: 14px;
+                color: #0f172a;
+                word-break: break-word;
+            }
+
+            .chaton-detail-full {
+                grid-column: 1 / -1;
+            }
+
+            .chaton-amenities-list {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-top: 6px;
+            }
+
+            .chaton-amenity-pill {
+                display: inline-flex;
+                align-items: center;
+                border-radius: 999px;
+                padding: 7px 10px;
+                font-size: 12px;
+                font-weight: 700;
+                background: #ecfeff;
+                color: #0f766e;
+                border: 1px solid #ccfbf1;
+            }
+
+            .chaton-image-preview {
+                width: 100%;
+                max-width: 320px;
+                height: auto;
+                border-radius: 14px;
+                border: 1px solid #e2e8f0;
+                display: block;
+            }
+
+            .chaton-gallery-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 12px;
+                margin-top: 10px;
+            }
+
+            .chaton-gallery-grid img {
+                width: 100%;
+                height: 160px;
+                object-fit: cover;
+                border-radius: 14px;
+                border: 1px solid #e2e8f0;
+            }
+
+            @media (max-width: 1200px) {
+                .chaton-list-toolbar-advanced {
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                }
+
+                .chaton-list-toolbar-advanced .chaton-search-box {
+                    grid-column: span 3;
+                }
+            }
+
+            @media (max-width: 980px) {
+                .chaton-list-toolbar-advanced {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+
+                .chaton-list-toolbar-advanced .chaton-search-box {
+                    grid-column: span 2;
+                }
+            }
+
+            @media (max-width: 782px) {
+                body.admin-bar .chaton-modal-overlay {
+                    padding-top: calc(46px + 16px);
+                }
+            }
+
+            @media (max-width: 760px) {
+                .chaton-list-wrap {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    padding: 18px;
+    border-radius: 18px;
+}
+
+                .chaton-list-header {
+                    flex-direction: column;
+                }
+
+                .chaton-list-toolbar-advanced {
+                    grid-template-columns: 1fr;
+                }
+
+                .chaton-list-toolbar-advanced .chaton-search-box {
+                    grid-column: span 1;
+                }
+
+                .chaton-table-wrap {
+                    display: none;
+                }
+
+                .chaton-cards-grid {
+                    display: grid;
+                }
+
+                .chaton-prop-card .chaton-card-meta {
+                    grid-template-columns: 1fr;
+                }
+
+                .chaton-detail-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .chaton-modal-overlay {
+                    padding: 110px 12px 24px;
+                }
+
+                .chaton-modal-card {
+                    padding: 18px;
+                    border-radius: 18px;
+                    max-height: calc(100dvh - 110px);
+                }
+
+                .chaton-modal-header h3 {
+                    font-size: 22px;
+                }
+
+                .chaton-modal-footer {
+                    justify-content: stretch;
+                }
+
+                .chaton-modal-footer .chaton-btn-detail,
+                .chaton-modal-footer .chaton-btn-small,
+                .chaton-modal-footer .chaton-btn-primary {
+                    width: 100%;
+                }
+            }
+        </style>
+
+        <script>
+        (function() {
+            const LIST_ENDPOINT   = <?php echo json_encode($list_endpoint); ?>;
+            const DELETE_ENDPOINT = <?php echo json_encode($delete_endpoint); ?>;
+            const PROPERTY_POPUP_TRIGGER_SELECTOR = '.chaton-open-prop-popup';
+
+            const searchInput = document.getElementById('chaton-props-search');
+            const statusFilter = document.getElementById('chaton-props-status-filter');
+            const operationFilter = document.getElementById('chaton-props-operation-filter');
+            const cityFilter = document.getElementById('chaton-props-city-filter');
+            const typeFilter = document.getElementById('chaton-props-type-filter');
+            const advisorFilter = document.getElementById('chaton-props-advisor-filter');
+            const refreshBtn = document.getElementById('chaton-props-refresh');
+            const tbody = document.getElementById('chaton-props-tbody');
+            const cards = document.getElementById('chaton-props-cards');
+            const statusEl = document.getElementById('chaton-props-status');
+            const countEl = document.getElementById('chaton-props-count');
+
+            const modal = document.getElementById('chaton-prop-modal');
+            const modalBody = document.getElementById('chaton-prop-modal-body');
+            const modalTitle = document.getElementById('chaton-prop-modal-title');
+            const modalClose = document.getElementById('chaton-prop-modal-close');
+            const modalFooterClose = document.getElementById('chaton-prop-modal-footer-close');
+            const copyBtn = document.getElementById('chaton-prop-copy-btn');
+            const waBtn = document.getElementById('chaton-prop-wa-btn');
+
+            if (modal && modal.parentNode !== document.body) {
+                document.body.appendChild(modal);
+            }
+
+            let allRows = [];
+            let currentDetailRow = null;
+            let suppressNextPopupTriggerCreateReset = false;
+            let createModeTimers = [];
+
+            function escapeHtml(str) {
+                return String(str || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function normalizeText(str) {
+                return String(str || '')
+                    .normalize('NFD')
+                    .replace(/[̀-ͯ]/g, '')
+                    .toLowerCase()
+                    .trim();
+            }
+
+            function pickVal(obj, keys) {
+                for (const key of keys) {
+                    if (typeof obj[key] !== 'undefined' && obj[key] !== null && obj[key] !== '') {
+                        return obj[key];
+                    }
+                }
+                return '';
+            }
+
+            function parseAmenities(value) {
+                if (Array.isArray(value)) return value;
+                if (!value) return [];
+
+                if (typeof value === 'string') {
+                    const trimmed = value.trim();
+                    if (!trimmed) return [];
+
+                    try {
+                        const parsed = JSON.parse(trimmed);
+                        if (Array.isArray(parsed)) return parsed;
+                    } catch (e) {}
+
+                    return trimmed.split(',').map(v => v.trim()).filter(Boolean);
+                }
+
+                return [];
+            }
+
+            function parseGalleryUrls(value) {
+                if (Array.isArray(value)) return value.filter(Boolean);
+                if (!value) return [];
+
+                if (typeof value === 'string') {
+                    const trimmed = value.trim();
+                    if (!trimmed) return [];
+
+                    try {
+                        const parsed = JSON.parse(trimmed);
+                        if (Array.isArray(parsed)) return parsed.filter(Boolean);
+                    } catch (e) {}
+
+                    return trimmed
+                        .split(/[\n,|]+/)
+                        .map(v => v.trim())
+                        .filter(Boolean);
+                }
+
+                return [];
+            }
+
+            function getRowFieldMap(row) {
+                return {
+                    property_id: pickVal(row, ['property_id', 'ID Propiedad', 'id_propiedad', 'id']),
+                    property_name: pickVal(row, ['property_name', 'Nombre Propiedad', 'nombre_propiedad', 'nombre']),
+                    property_type: pickVal(row, ['property_type', 'Tipo de Propiedad', 'tipo_propiedad']),
+                    operation_type: pickVal(row, ['operation_type', 'Tipo de Operación', 'Tipo de Operacion', 'tipo_operacion']),
+                    property_status: pickVal(row, ['property_status', 'Estatus de la propiedad', 'estatus_propiedad', 'estatus']),
+                    state: pickVal(row, ['state', 'Estado']),
+                    city: pickVal(row, ['city', 'Ciudad / Municipio', 'Ciudad', 'Municipio']),
+                    zone: pickVal(row, ['zone', 'Colonia / Zona', 'Zona', 'Colonia']),
+                    address: pickVal(row, ['address', 'Dirección', 'Direccion']),
+                    maps_url: pickVal(row, ['maps_url', 'Ubicación en Maps', 'Ubicacion en Maps']),
+                    price: pickVal(row, ['price', 'Precio']),
+                    currency: pickVal(row, ['currency', 'Moneda']),
+                    land_area_m2: pickVal(row, ['land_area_m2', 'Terreno m²', 'Terreno m2']),
+                    construction_area_m2: pickVal(row, ['construction_area_m2', 'Construcción m²', 'Construccion m²', 'Construccion m2']),
+                    frontage_m: pickVal(row, ['frontage_m', 'Frente mts']),
+                    depth_m: pickVal(row, ['depth_m', 'Fondo mts']),
+                    bedrooms: pickVal(row, ['bedrooms', 'Número de habitaciones', 'Numero de habitaciones']),
+                    bathrooms: pickVal(row, ['bathrooms', 'Número de baños', 'Numero de baños']),
+                    half_bathrooms: pickVal(row, ['half_bathrooms', 'Medio baño', 'Medio bano']),
+                    parking_spaces: pickVal(row, ['parking_spaces', 'Lugares de autos']),
+                    short_description: pickVal(row, ['short_description', 'Descripción corta', 'Descripcion corta']),
+                    full_description: pickVal(row, ['full_description', 'Descripción completa', 'Descripcion completa']),
+                    amenities: pickVal(row, ['amenities', 'Amenidades']),
+                    other_amenities: pickVal(row, ['other_amenities', 'Otras amenidades']),
+                    virtual_tour_url: pickVal(row, ['virtual_tour_url', 'Video / Tour virtual', 'Tour virtual']),
+                    advisor_name: pickVal(row, ['advisor_name', 'Asesor responsable']),
+                    contact_phone: pickVal(row, ['contact_phone', 'Teléfono de contacto', 'Telefono de contacto']),
+                    internal_notes: pickVal(row, ['internal_notes', 'Observaciones internas']),
+                    created_at: pickVal(row, ['created_at', 'Fecha de alta']),
+                    updated_at: pickVal(row, ['updated_at', 'Fecha de actualización', 'Fecha de actualizacion']),
+                    main_image_url: pickVal(row, ['main_image_url', 'Imagen principal', 'Imagen Principal']),
+                    gallery_urls: pickVal(row, ['gallery_urls', 'Galería de imágenes', 'Galeria de imagenes'])
+                };
+            }
+
+            function extractRows(response) {
+                if (Array.isArray(response)) return response;
+                if (response && Array.isArray(response.data)) return response.data;
+                if (response && Array.isArray(response.rows)) return response.rows;
+                if (response && Array.isArray(response.items)) return response.items;
+                return [];
+            }
+
+            function formatMoney(price, currency) {
+                const amount = Number(price);
+                if (isNaN(amount)) return escapeHtml(price || '');
+
+                try {
+                    return new Intl.NumberFormat('es-MX', {
+                        style: 'currency',
+                        currency: currency || 'MXN',
+                        maximumFractionDigits: 0
+                    }).format(amount);
+                } catch (e) {
+                    return escapeHtml(amount);
+                }
+            }
+
+            function statusClass(status) {
+                const val = normalizeText(status);
+                if (val === 'disponible') return 'disponible';
+                if (val === 'apartada') return 'apartada';
+                if (val === 'vendida') return 'vendida';
+                if (val === 'rentada') return 'rentada';
+                if (val === 'archivada') return 'archivada';
+                return 'inactiva';
+            }
+
+            function uniqueSortedValues(rows, fieldName) {
+                const values = rows
+                    .map(row => getRowFieldMap(row)[fieldName])
+                    .filter(Boolean)
+                    .map(v => String(v).trim());
+
+                return [...new Set(values)].sort((a, b) => a.localeCompare(b, 'es'));
+            }
+
+            function populateDynamicFilters() {
+                const cities = uniqueSortedValues(allRows, 'city');
+                const types = uniqueSortedValues(allRows, 'property_type');
+                const advisors = uniqueSortedValues(allRows, 'advisor_name');
+
+                cityFilter.innerHTML = '<option value="">Todas las ciudades</option>' +
+                    cities.map(city => `<option value="${escapeHtml(city)}">${escapeHtml(city)}</option>`).join('');
+
+                typeFilter.innerHTML = '<option value="">Todos los tipos</option>' +
+                    types.map(type => `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`).join('');
+
+                advisorFilter.innerHTML = '<option value="">Todos los asesores</option>' +
+                    advisors.map(advisor => `<option value="${escapeHtml(advisor)}">${escapeHtml(advisor)}</option>`).join('');
+            }
+
+            function rowMatches(row, term, status, operation, city, type, advisor) {
+                const m = getRowFieldMap(row);
+                const normalizedStatus = normalizeText(m.property_status);
+
+                const haystack = normalizeText([
+                    m.property_id,
+                    m.property_name,
+                    m.property_type,
+                    m.operation_type,
+                    m.property_status,
+                    m.state,
+                    m.city,
+                    m.zone,
+                    m.address,
+                    m.advisor_name
+                ].join(' '));
+
+                const matchesTerm = !term || haystack.includes(term);
+                const matchesOperation = !operation || normalizeText(m.operation_type) === normalizeText(operation);
+                const matchesCity = !city || normalizeText(m.city) === normalizeText(city);
+                const matchesType = !type || normalizeText(m.property_type) === normalizeText(type);
+                const matchesAdvisor = !advisor || normalizeText(m.advisor_name) === normalizeText(advisor);
+
+                let matchesStatus = true;
+                if (!status) {
+                    matchesStatus = normalizedStatus !== 'archivada';
+                } else {
+                    matchesStatus = normalizedStatus === normalizeText(status);
+                }
+
+                return matchesTerm && matchesStatus && matchesOperation && matchesCity && matchesType && matchesAdvisor;
+            }
+
+            function buildAmenitiesHtml(m) {
+                const amenities = parseAmenities(m.amenities);
+                const pills = [];
+
+                amenities.forEach(item => {
+                    pills.push(`<span class="chaton-amenity-pill">${escapeHtml(item)}</span>`);
+                });
+
+                if (m.other_amenities) {
+                    pills.push(`<span class="chaton-amenity-pill">${escapeHtml(m.other_amenities)}</span>`);
+                }
+
+                return pills.length
+                    ? `<div class="chaton-amenities-list">${pills.join('')}</div>`
+                    : '<span>Sin amenidades registradas</span>';
+            }
+
+            function buildGalleryHtml(m) {
+                const gallery = parseGalleryUrls(m.gallery_urls);
+                if (!gallery.length) {
+                    return '<span>Sin galería registrada</span>';
+                }
+
+                return `
+                    <div class="chaton-gallery-grid">
+                        ${gallery.map(url => `<img src="${escapeHtml(url)}" alt="Imagen de galería">`).join('')}
+                    </div>
+                `;
+            }
+
+            function buildPropertyShareText(row) {
+                const m = getRowFieldMap(row);
+                const location = [m.city, m.zone, m.state].filter(Boolean).join(', ');
+                const amenities = parseAmenities(m.amenities);
+                const amenitiesText = amenities.length ? amenities.join(', ') : (m.other_amenities || '');
+                const areaText = [
+                    m.land_area_m2 ? `Terreno: ${m.land_area_m2} m²` : '',
+                    m.construction_area_m2 ? `Construcción: ${m.construction_area_m2} m²` : ''
+                ].filter(Boolean).join(' | ');
+                const detailsText = [
+                    m.bedrooms ? `🛏 ${m.bedrooms} hab.` : '',
+                    m.bathrooms ? `🛁 ${m.bathrooms} baños` : '',
+                    m.parking_spaces ? `🚗 ${m.parking_spaces} estacionamientos` : ''
+                ].filter(Boolean).join(' · ');
+
+                const lines = [
+                    `Hola, te comparto esta propiedad:`,
+                    '',
+                    `🏡 *${m.property_name || 'Propiedad disponible'}*`,
+                    m.property_type ? `🏷️ Tipo: ${m.property_type}` : '',
+                    m.operation_type ? `🔁 Operación: ${m.operation_type}` : '',
+                    m.property_status ? `✅ Estatus: ${m.property_status}` : '',
+                    location ? `📍 Ubicación: ${location}` : '',
+                    m.price ? `💰 Precio: ${formatMoney(m.price, m.currency).replace(/&amp;/g, '&')}` : '',
+                    areaText ? `📐 ${areaText}` : '',
+                    detailsText ? detailsText : '',
+                    m.short_description ? `📝 ${m.short_description}` : '',
+                    amenitiesText ? `✨ Amenidades: ${amenitiesText}` : '',
+                    m.maps_url ? `🗺️ Maps: ${m.maps_url}` : '',
+                    m.virtual_tour_url ? `🎥 Tour virtual: ${m.virtual_tour_url}` : '',
+                    m.contact_phone ? `📲 Contacto: ${m.contact_phone}` : '',
+                    m.advisor_name ? `👤 Asesor: ${m.advisor_name}` : ''
+                ].filter(Boolean);
+
+                return lines.join('\n');
+            }
+
+            function setFormValue(id, value) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.value = value || '';
+            }
+
+            function clearAmenityChecks() {
+                document.querySelectorAll('input[name="amenities[]"]').forEach(el => {
+                    el.checked = false;
+                });
+            }
+
+            function getNowFormatted() {
+                const now = new Date();
+                const pad = n => (n < 10 ? '0' + n : n);
+                return now.getFullYear() + '-' +
+                    pad(now.getMonth() + 1) + '-' +
+                    pad(now.getDate()) + ' ' +
+                    pad(now.getHours()) + ':' +
+                    pad(now.getMinutes()) + ':' +
+                    pad(now.getSeconds());
+            }
+
+            function generatePropertyId() {
+                const now = new Date();
+                const pad = n => (n < 10 ? '0' + n : n);
+                return 'PROP-' +
+                    now.getFullYear().toString() +
+                    pad(now.getMonth() + 1) +
+                    pad(now.getDate()) + '-' +
+                    pad(now.getHours()) +
+                    pad(now.getMinutes()) +
+                    pad(now.getSeconds());
+            }
+
+            function getPropertyForm() {
+                return document.getElementById('chaton-property-form');
+            }
+
+            function waitForElement(selector, timeout = 7000, interval = 120) {
+                return new Promise((resolve) => {
+                    const start = Date.now();
+
+                    const timer = setInterval(() => {
+                        const el = document.querySelector(selector);
+
+                        if (el) {
+                            clearInterval(timer);
+                            resolve(el);
+                            return;
+                        }
+
+                        if (Date.now() - start >= timeout) {
+                            clearInterval(timer);
+                            resolve(null);
+                        }
+                    }, interval);
+                });
+            }
+
+            function clearCreateModeTimers() {
+                createModeTimers.forEach(timer => clearTimeout(timer));
+                createModeTimers = [];
+            }
+
+            function ensureArchivedOptionInFormStatusSelect() {
+                const statusSelect = document.getElementById('property_status');
+                if (!statusSelect) return;
+
+                const hasArchived = Array.from(statusSelect.options).some(opt => normalizeText(opt.value) === 'archivada');
+                if (!hasArchived) {
+                    const option = document.createElement('option');
+                    option.value = 'Archivada';
+                    option.textContent = 'Archivada';
+                    statusSelect.appendChild(option);
+                }
+            }
+
+            function setFormMode(mode) {
+                const form = getPropertyForm();
+                if (!form) return;
+
+                ensureArchivedOptionInFormStatusSelect();
+
+                const headerTitle = form.querySelector('.chaton-form-header h2');
+                const headerText = form.querySelector('.chaton-form-header p');
+                const submitBtn = form.querySelector('.chaton-form-actions button[type="submit"], .chaton-form-actions .chaton-btn-primary, button[type="submit"]');
+
+                if (headerTitle) {
+                    if (!headerTitle.dataset.originalText) {
+                        headerTitle.dataset.originalText = headerTitle.textContent.trim();
+                    }
+                    headerTitle.textContent = mode === 'edit' ? 'Editar propiedad' : headerTitle.dataset.originalText;
+                }
+
+                if (headerText) {
+                    if (!headerText.dataset.originalText) {
+                        headerText.dataset.originalText = headerText.textContent.trim();
+                    }
+                    headerText.textContent = mode === 'edit'
+                        ? 'Actualiza la información y guarda los cambios de esta propiedad.'
+                        : headerText.dataset.originalText;
+                }
+
+                if (submitBtn) {
+                    if (!submitBtn.dataset.originalText) {
+                        submitBtn.dataset.originalText = submitBtn.textContent.trim();
+                    }
+                    submitBtn.textContent = mode === 'edit' ? 'Actualizar propiedad' : submitBtn.dataset.originalText;
+                }
+
+                form.dataset.mode = mode;
+            }
+
+            async function prepareFormForCreate() {
+                let form = getPropertyForm();
+                if (!form) {
+                    form = await waitForElement('#chaton-property-form', 6000, 120);
+                }
+                if (!form) return;
+
+                if (typeof form.reset === 'function') {
+                    form.reset();
+                }
+
+                clearAmenityChecks();
+                ensureArchivedOptionInFormStatusSelect();
+
+                setFormValue('property_id', generatePropertyId());
+                setFormValue('created_at', getNowFormatted());
+                setFormValue('updated_at', getNowFormatted());
+
+                const statusSelect = document.getElementById('property_status');
+                if (statusSelect) {
+                    if (Array.from(statusSelect.options).some(opt => normalizeText(opt.value) === 'disponible')) {
+                        statusSelect.value = 'Disponible';
+                    } else {
+                        statusSelect.selectedIndex = 0;
+                    }
+                }
+
+                const formStatus = document.getElementById('chaton-form-status');
+                if (formStatus) {
+                    formStatus.textContent = '';
+                    formStatus.className = 'chaton-form-status';
+                }
+
+                setFormMode('create');
+            }
+
+            function scheduleCreateModeReset() {
+                clearCreateModeTimers();
+
+                const delays = [0, 250, 700, 1300, 2200];
+                delays.forEach(delay => {
+                    const timer = setTimeout(() => {
+                        prepareFormForCreate();
+                    }, delay);
+                    createModeTimers.push(timer);
+                });
+            }
+
+            function bindPopupTriggerElements() {
+                document.querySelectorAll(PROPERTY_POPUP_TRIGGER_SELECTOR).forEach(el => {
+                    if (el.dataset.chatonBound === '1') return;
+                    el.dataset.chatonBound = '1';
+
+                    el.addEventListener('click', function() {
+                        if (suppressNextPopupTriggerCreateReset) {
+                            suppressNextPopupTriggerCreateReset = false;
+                            return;
+                        }
+                        scheduleCreateModeReset();
+                    }, true);
+                });
+            }
+
+            function openPropertyPopup(fromEdit = false) {
+                const trigger = document.querySelector(PROPERTY_POPUP_TRIGGER_SELECTOR);
+                if (trigger) {
+                    if (fromEdit) {
+                        suppressNextPopupTriggerCreateReset = true;
+                    }
+                    trigger.click();
+                    return true;
+                }
+                return false;
+            }
+
+            async function loadRowIntoForm(row) {
+                clearCreateModeTimers();
+
+                let form = getPropertyForm();
+
+                if (!form) {
+                    openPropertyPopup(true);
+                    form = await waitForElement('#chaton-property-form', 7000, 150);
+                }
+
+                if (!form) {
+                    alert('No se encontró el formulario del popup. Revisa que el botón que abre el popup tenga la clase "chaton-open-prop-popup".');
+                    return;
+                }
+
+                ensureArchivedOptionInFormStatusSelect();
+                setFormMode('edit');
+
+                const m = getRowFieldMap(row);
+
+                setFormValue('property_id', m.property_id);
+                setFormValue('property_name', m.property_name);
+                setFormValue('property_type', m.property_type);
+                setFormValue('operation_type', m.operation_type);
+                setFormValue('property_status', m.property_status);
+
+                setFormValue('state', m.state);
+                setFormValue('city', m.city);
+                setFormValue('zone', m.zone);
+                setFormValue('address', m.address);
+                setFormValue('maps_url', m.maps_url);
+
+                setFormValue('price', m.price);
+                setFormValue('currency', m.currency || 'MXN');
+                setFormValue('land_area_m2', m.land_area_m2);
+                setFormValue('construction_area_m2', m.construction_area_m2);
+                setFormValue('frontage_m', m.frontage_m);
+                setFormValue('depth_m', m.depth_m);
+
+                setFormValue('bedrooms', m.bedrooms);
+                setFormValue('bathrooms', m.bathrooms);
+                setFormValue('half_bathrooms', m.half_bathrooms);
+                setFormValue('parking_spaces', m.parking_spaces);
+
+                setFormValue('short_description', m.short_description);
+                setFormValue('full_description', m.full_description);
+                setFormValue('other_amenities', m.other_amenities);
+                setFormValue('virtual_tour_url', m.virtual_tour_url);
+
+                setFormValue('advisor_name', m.advisor_name);
+                setFormValue('contact_phone', m.contact_phone);
+                setFormValue('internal_notes', m.internal_notes);
+                setFormValue('created_at', m.created_at);
+                setFormValue('updated_at', getNowFormatted());
+
+                clearAmenityChecks();
+                const amenities = parseAmenities(m.amenities);
+                if (amenities.length) {
+                    document.querySelectorAll('input[name="amenities[]"]').forEach(el => {
+                        if (amenities.includes(el.value)) {
+                            el.checked = true;
+                        }
+                    });
+                }
+
+                const formStatus = document.getElementById('chaton-form-status');
+                if (formStatus) {
+                    formStatus.textContent = 'Modo edición: se cargó la propiedad "' + (m.property_name || '') + '". Guarda el formulario para actualizarla.';
+                    formStatus.className = 'chaton-form-status ok';
+                }
+
+                setTimeout(() => {
+                    const firstField = document.getElementById('property_name');
+                    if (firstField) firstField.focus();
+                }, 250);
+            }
+
+            function openPropertyDetail(row) {
+                const m = getRowFieldMap(row);
+                currentDetailRow = row;
+
+                modalTitle.textContent = m.property_name || 'Detalle de propiedad';
+
+                modalBody.innerHTML = `
+                    <div class="chaton-detail-grid">
+                        <div class="chaton-detail-item"><strong>ID</strong><span>${escapeHtml(m.property_id)}</span></div>
+                        <div class="chaton-detail-item"><strong>Estatus</strong><span>${escapeHtml(m.property_status || 'No registrado')}</span></div>
+
+                        <div class="chaton-detail-item"><strong>Tipo de propiedad</strong><span>${escapeHtml(m.property_type || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Tipo de operación</strong><span>${escapeHtml(m.operation_type || 'No registrado')}</span></div>
+
+                        <div class="chaton-detail-item"><strong>Estado</strong><span>${escapeHtml(m.state || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Ciudad / Municipio</strong><span>${escapeHtml(m.city || 'No registrado')}</span></div>
+
+                        <div class="chaton-detail-item"><strong>Zona / Colonia</strong><span>${escapeHtml(m.zone || 'No registrado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Dirección</strong><span>${escapeHtml(m.address || 'No registrada')}</span></div>
+
+                        <div class="chaton-detail-item chaton-detail-full">
+                            <strong>Ubicación en Maps</strong>
+                            ${m.maps_url ? `<a href="${escapeHtml(m.maps_url)}" target="_blank" rel="noopener">Abrir ubicación</a>` : '<span>No registrada</span>'}
+                        </div>
+
+                        <div class="chaton-detail-item"><strong>Precio</strong><span>${formatMoney(m.price, m.currency)}</span></div>
+                        <div class="chaton-detail-item"><strong>Moneda</strong><span>${escapeHtml(m.currency || 'MXN')}</span></div>
+
+                        <div class="chaton-detail-item"><strong>Terreno m²</strong><span>${escapeHtml(m.land_area_m2 || '0')}</span></div>
+                        <div class="chaton-detail-item"><strong>Construcción m²</strong><span>${escapeHtml(m.construction_area_m2 || '0')}</span></div>
+
+                        <div class="chaton-detail-item"><strong>Frente mts</strong><span>${escapeHtml(m.frontage_m || '0')}</span></div>
+                        <div class="chaton-detail-item"><strong>Fondo mts</strong><span>${escapeHtml(m.depth_m || '0')}</span></div>
+
+                        <div class="chaton-detail-item"><strong>Habitaciones</strong><span>${escapeHtml(m.bedrooms || '0')}</span></div>
+                        <div class="chaton-detail-item"><strong>Baños</strong><span>${escapeHtml(m.bathrooms || '0')}</span></div>
+
+                        <div class="chaton-detail-item"><strong>Medio baño</strong><span>${escapeHtml(m.half_bathrooms || '0')}</span></div>
+                        <div class="chaton-detail-item"><strong>Lugares de autos</strong><span>${escapeHtml(m.parking_spaces || '0')}</span></div>
+
+                        <div class="chaton-detail-item chaton-detail-full">
+                            <strong>Descripción corta</strong>
+                            <span>${escapeHtml(m.short_description || 'Sin descripción corta')}</span>
+                        </div>
+
+                        <div class="chaton-detail-item chaton-detail-full">
+                            <strong>Descripción completa</strong>
+                            <span>${escapeHtml(m.full_description || 'Sin descripción completa')}</span>
+                        </div>
+
+                        <div class="chaton-detail-item chaton-detail-full">
+                            <strong>Amenidades</strong>
+                            ${buildAmenitiesHtml(m)}
+                        </div>
+
+                        <div class="chaton-detail-item"><strong>Asesor responsable</strong><span>${escapeHtml(m.advisor_name || 'No asignado')}</span></div>
+                        <div class="chaton-detail-item"><strong>Teléfono de contacto</strong><span>${escapeHtml(m.contact_phone || 'No registrado')}</span></div>
+
+                        <div class="chaton-detail-item chaton-detail-full">
+                            <strong>Tour virtual</strong>
+                            ${m.virtual_tour_url ? `<a href="${escapeHtml(m.virtual_tour_url)}" target="_blank" rel="noopener">Abrir tour virtual</a>` : '<span>No registrado</span>'}
+                        </div>
+
+                        <div class="chaton-detail-item chaton-detail-full">
+                            <strong>Observaciones internas</strong>
+                            <span>${escapeHtml(m.internal_notes || 'Sin observaciones')}</span>
+                        </div>
+
+                        <div class="chaton-detail-item"><strong>Fecha de alta</strong><span>${escapeHtml(m.created_at || 'No registrada')}</span></div>
+                        <div class="chaton-detail-item"><strong>Fecha de actualización</strong><span>${escapeHtml(m.updated_at || 'No registrada')}</span></div>
+
+                        <div class="chaton-detail-item chaton-detail-full">
+                            <strong>Imagen principal</strong>
+                            ${m.main_image_url ? `<img class="chaton-image-preview" src="${escapeHtml(m.main_image_url)}" alt="Imagen principal">` : '<span>Sin imagen principal</span>'}
+                        </div>
+
+                        <div class="chaton-detail-item chaton-detail-full">
+                            <strong>Galería</strong>
+                            ${buildGalleryHtml(m)}
+                        </div>
+                    </div>
+                `;
+
+                modal.hidden = false;
+                document.body.style.overflow = 'hidden';
+                document.body.classList.add('chaton-detail-modal-open');
+
+                setTimeout(() => {
+                    const card = modal.querySelector('.chaton-modal-card');
+                    if (card) card.scrollTop = 0;
+                }, 20);
+            }
+
+            function closePropertyDetail() {
+                modal.hidden = true;
+                document.body.style.overflow = '';
+                document.body.classList.remove('chaton-detail-modal-open');
+                currentDetailRow = null;
+            }
+
+            function renderRows() {
+                const term = normalizeText(searchInput.value);
+                const status = statusFilter.value;
+                const operation = operationFilter.value;
+                const city = cityFilter.value;
+                const type = typeFilter.value;
+                const advisor = advisorFilter.value;
+
+                const filtered = allRows.filter(row =>
+                    rowMatches(row, term, status, operation, city, type, advisor)
+                );
+
+                countEl.textContent = filtered.length + (filtered.length === 1 ? ' propiedad' : ' propiedades');
+
+                if (!filtered.length) {
+                    tbody.innerHTML = '<tr><td colspan="10">No se encontraron propiedades con esos filtros.</td></tr>';
+                    cards.innerHTML = '<div class="chaton-prop-card"><p>No se encontraron propiedades con esos filtros.</p></div>';
+                    return;
+                }
+
+                tbody.innerHTML = filtered.map((row) => {
+                    const m = getRowFieldMap(row);
+                    const location = [m.city, m.zone, m.state].filter(Boolean).join(' · ');
+
+                    return `
+                        <tr>
+                            <td>${escapeHtml(m.property_id)}</td>
+                            <td>
+                                <strong>${escapeHtml(m.property_name)}</strong>
+                                ${m.short_description ? `<div style="margin-top:4px;color:#64748b;font-size:12px;">${escapeHtml(m.short_description)}</div>` : ''}
+                            </td>
+                            <td>${escapeHtml(m.property_type)}</td>
+                            <td>${escapeHtml(m.operation_type)}</td>
+                            <td>${escapeHtml(location)}</td>
+                            <td>${formatMoney(m.price, m.currency)}</td>
+                            <td><span class="chaton-status-pill ${statusClass(m.property_status)}">${escapeHtml(m.property_status || 'Sin estatus')}</span></td>
+                            <td>${escapeHtml(m.advisor_name)}</td>
+                            <td>${escapeHtml(m.updated_at || m.created_at)}</td>
+                            <td>
+                                <div class="chaton-row-actions">
+                                    <button type="button" class="chaton-btn-detail chaton-detail-btn" data-property-id="${escapeHtml(m.property_id)}">Ver detalle</button>
+                                    <button type="button" class="chaton-btn-small chaton-edit-btn" data-property-id="${escapeHtml(m.property_id)}">Editar</button>
+                                    <button type="button" class="chaton-btn-danger chaton-delete-btn" data-id="${escapeHtml(m.property_id)}">Eliminar</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                cards.innerHTML = filtered.map((row) => {
+                    const m = getRowFieldMap(row);
+                    const location = [m.city, m.zone, m.state].filter(Boolean).join(' · ');
+
+                    return `
+                        <div class="chaton-prop-card">
+                            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+                                <div>
+                                    <h4>${escapeHtml(m.property_name)}</h4>
+                                    <p>${escapeHtml(m.property_id)}</p>
+                                </div>
+                                <span class="chaton-status-pill ${statusClass(m.property_status)}">${escapeHtml(m.property_status || 'Sin estatus')}</span>
+                            </div>
+
+                            <div class="chaton-card-meta">
+                                <div><strong>Tipo</strong>${escapeHtml(m.property_type)}</div>
+                                <div><strong>Operación</strong>${escapeHtml(m.operation_type)}</div>
+                                <div><strong>Ubicación</strong>${escapeHtml(location)}</div>
+                                <div><strong>Precio</strong>${formatMoney(m.price, m.currency)}</div>
+                                <div><strong>Asesor</strong>${escapeHtml(m.advisor_name)}</div>
+                                <div><strong>Actualizado</strong>${escapeHtml(m.updated_at || m.created_at)}</div>
+                            </div>
+
+                            ${m.short_description ? `<p>${escapeHtml(m.short_description)}</p>` : ''}
+
+                            <div class="chaton-card-actions">
+                                <button type="button" class="chaton-btn-detail chaton-detail-btn" data-property-id="${escapeHtml(m.property_id)}">Ver detalle</button>
+                                <button type="button" class="chaton-btn-small chaton-edit-btn" data-property-id="${escapeHtml(m.property_id)}">Editar</button>
+                                <button type="button" class="chaton-btn-danger chaton-delete-btn" data-id="${escapeHtml(m.property_id)}">Eliminar</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            async function loadProperties() {
+                statusEl.textContent = '';
+                statusEl.className = 'chaton-list-status';
+
+                if (!LIST_ENDPOINT || LIST_ENDPOINT === 'PON_AQUI_TU_WEBHOOK_LIST_DE_N8N') {
+                    tbody.innerHTML = '<tr><td colspan="10">Falta configurar la URL del listado en n8n.</td></tr>';
+                    cards.innerHTML = '<div class="chaton-prop-card"><p>Falta configurar la URL del listado en n8n.</p></div>';
+                    countEl.textContent = '0 propiedades';
+                    return;
+                }
+
+                try {
+                    tbody.innerHTML = '<tr><td colspan="10">Cargando propiedades...</td></tr>';
+                    cards.innerHTML = '';
+
+                    const response = await fetch(LIST_ENDPOINT, { method: 'GET' });
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+
+                    const json = await response.json();
+                    allRows = extractRows(json);
+                    populateDynamicFilters();
+                    renderRows();
+
+                } catch (error) {
+                    console.error(error);
+                    tbody.innerHTML = '<tr><td colspan="10">Ocurrió un error al cargar el listado.</td></tr>';
+                    cards.innerHTML = '<div class="chaton-prop-card"><p>Ocurrió un error al cargar el listado.</p></div>';
+                    countEl.textContent = '0 propiedades';
+                    statusEl.textContent = '❌ No se pudo cargar el listado.';
+                    statusEl.className = 'chaton-list-status error';
+                }
+            }
+
+            async function deleteProperty(propertyId) {
+                if (!propertyId) return;
+
+                if (!DELETE_ENDPOINT || DELETE_ENDPOINT === 'PON_AQUI_TU_WEBHOOK_DELETE_DE_N8N') {
+                    alert('Falta configurar la URL del webhook para eliminar propiedades.');
+                    return;
+                }
+
+                const typed = window.prompt(
+                    '⚠️ Esta acción eliminará definitivamente la propiedad.\n\nEscriba ELIMINAR para continuar:'
+                );
+
+                if (typed === null) return;
+
+                if (String(typed).trim().toUpperCase() !== 'ELIMINAR') {
+                    alert('El texto no coincide. La propiedad no fue eliminada.');
+                    return;
+                }
+
+                try {
+                    statusEl.textContent = 'Eliminando propiedad...';
+                    statusEl.className = 'chaton-list-status';
+
+                    const response = await fetch(DELETE_ENDPOINT, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+    action: 'delete',
+    property_id: propertyId
+})
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+
+                    statusEl.textContent = '✅ Propiedad eliminada correctamente.';
+                    statusEl.className = 'chaton-list-status ok';
+
+                    await loadProperties();
+
+                } catch (error) {
+                    console.error(error);
+                    statusEl.textContent = '❌ No se pudo eliminar la propiedad.';
+                    statusEl.className = 'chaton-list-status error';
+                }
+            }
+
+            async function copyCurrentPropertyText() {
+                if (!currentDetailRow) return;
+
+                const text = buildPropertyShareText(currentDetailRow);
+
+                try {
+                    await navigator.clipboard.writeText(text);
+                    alert('Texto copiado correctamente.');
+                } catch (e) {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('Texto copiado correctamente.');
+                }
+            }
+
+            function shareCurrentPropertyWhatsApp() {
+                if (!currentDetailRow) return;
+                const text = buildPropertyShareText(currentDetailRow);
+                window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+            }
+
+            document.addEventListener('click', async function(e) {
+                const editBtn = e.target.closest('.chaton-edit-btn');
+                const deleteBtn = e.target.closest('.chaton-delete-btn');
+                const detailBtn = e.target.closest('.chaton-detail-btn');
+
+                if (editBtn) {
+                    const propertyId = editBtn.getAttribute('data-property-id');
+
+                    if (propertyId) {
+                        const selectedRow = allRows.find(row => {
+                            const m = getRowFieldMap(row);
+                            return String(m.property_id) === String(propertyId);
+                        });
+
+                        if (selectedRow) {
+                            await loadRowIntoForm(selectedRow);
+                        }
+                    }
+                }
+
+                if (deleteBtn) {
+                    const propertyId = deleteBtn.getAttribute('data-id');
+                    deleteProperty(propertyId);
+                }
+
+                if (detailBtn) {
+                    const propertyId = detailBtn.getAttribute('data-property-id');
+
+                    if (propertyId) {
+                        const selectedRow = allRows.find(row => {
+                            const m = getRowFieldMap(row);
+                            return String(m.property_id) === String(propertyId);
+                        });
+
+                        if (selectedRow) {
+                            openPropertyDetail(selectedRow);
+                        }
+                    }
+                }
+
+                if (e.target === modal) {
+                    closePropertyDetail();
+                }
+            });
+
+            if (modalClose) modalClose.addEventListener('click', closePropertyDetail);
+            if (modalFooterClose) modalFooterClose.addEventListener('click', closePropertyDetail);
+            if (copyBtn) copyBtn.addEventListener('click', copyCurrentPropertyText);
+            if (waBtn) waBtn.addEventListener('click', shareCurrentPropertyWhatsApp);
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal && !modal.hidden) {
+                    closePropertyDetail();
+                }
+            });
+
+            searchInput.addEventListener('input', renderRows);
+            statusFilter.addEventListener('change', renderRows);
+            operationFilter.addEventListener('change', renderRows);
+            cityFilter.addEventListener('change', renderRows);
+            typeFilter.addEventListener('change', renderRows);
+            advisorFilter.addEventListener('change', renderRows);
+            refreshBtn.addEventListener('click', loadProperties);
+
+            bindPopupTriggerElements();
+            setTimeout(bindPopupTriggerElements, 1200);
+            setTimeout(bindPopupTriggerElements, 3000);
+
+            window.chatonPropsReload = loadProperties;
+            window.chatonPreparePropertyFormCreate = scheduleCreateModeReset;
+            window.chatonEnsureArchivedOptionInFormStatusSelect = ensureArchivedOptionInFormStatusSelect;
+
+            loadProperties();
+        })();
+        </script>
+        <?php
+        return ob_get_clean();
+    }
+}
+
+add_shortcode('chaton_propiedades_listado', 'chaton_propiedades_listado_shortcode');
