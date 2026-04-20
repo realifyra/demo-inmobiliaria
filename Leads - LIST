@@ -1,0 +1,77 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "path": "leads-list",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ba4f5823-abd9-4326-abb9-ca4c0a02c564",
+      "name": "Webhook",
+      "webhookId": "4060607b-0c76-42c1-b709-e8605c2d3c33"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA",
+          "mode": "list",
+          "cachedResultName": "demo-inmobiliarias",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1002556348,
+          "mode": "list",
+          "cachedResultName": "leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit#gid=1002556348"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "be86bca3-f95f-4e1c-a81c-d9914ebd7648",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "brlgpJUp82pkG28u",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "82915d6284021ae316fa922b02405245da9d230ae25a4604189ab9cf7292c161"
+  }
+}
