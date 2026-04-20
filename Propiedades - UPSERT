@@ -1,0 +1,1220 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "propiedades-upsert",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9583b237-4c37-489b-84f6-ce3de6eaf2df",
+      "name": "Webhook",
+      "webhookId": "bd319074-5349-4027-b2c3-f6cde6a5b583"
+    },
+    {
+      "parameters": {
+        "jsCode": "const action =\n  $json.body?.action ??\n  $json.action ??\n  'upsert';\n\nif (action === 'delete') {\n  const propertyId =\n    $json.body?.property_id ??\n    $json.property_id ??\n    '';\n\n  if (!propertyId) {\n    throw new Error('No llegó property_id para eliminar.');\n  }\n\n  return [\n    {\n      json: {\n        action: 'delete',\n        property_id: String(propertyId).trim()\n      }\n    }\n  ];\n}\n\nconst raw =\n  $json.body?.payload ??\n  $json.payload ??\n  '';\n\nif (!raw) {\n  throw new Error('No llegó el payload del formulario.');\n}\n\nlet p;\ntry {\n  p = typeof raw === 'string' ? JSON.parse(raw) : raw;\n} catch (e) {\n  throw new Error('No se pudo parsear el payload JSON.');\n}\n\nreturn [\n  {\n    json: {\n      action: 'upsert',\n      property_id: p.property_id || '',\n      property_name: p.property_name || '',\n      property_type: p.property_type || '',\n      operation_type: p.operation_type || '',\n      property_status: p.property_status || '',\n      state: p.state || '',\n      city: p.city || '',\n      zone: p.zone || '',\n      address: p.address || '',\n      maps_url: p.maps_url || '',\n      price: p.price || '',\n      currency: p.currency || 'MXN',\n      land_area_m2: p.land_area_m2 || '',\n      construction_area_m2: p.construction_area_m2 || '',\n      frontage_m: p.frontage_m || '',\n      depth_m: p.depth_m || '',\n      bedrooms: p.bedrooms || '',\n      bathrooms: p.bathrooms || '',\n      half_bathrooms: p.half_bathrooms || '',\n      parking_spaces: p.parking_spaces || '',\n      short_description: p.short_description || '',\n      full_description: p.full_description || '',\n      amenities: Array.isArray(p.amenities) ? p.amenities.join(', ') : (p.amenities || ''),\n      other_amenities: p.other_amenities || '',\n      virtual_tour_url: p.virtual_tour_url || '',\n      advisor_name: p.advisor_name || '',\n      contact_phone: p.contact_phone || '',\n      internal_notes: p.internal_notes || '',\n      created_at: p.created_at || '',\n      updated_at: p.updated_at || '',\n      main_image_url: p.main_image_url || '',\n      gallery_urls: Array.isArray(p.gallery_urls) ? JSON.stringify(p.gallery_urls) : (p.gallery_urls || '')\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "befe9ac8-a381-4650-968b-63cf9feb9dfa",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA",
+          "mode": "list",
+          "cachedResultName": "demo-inmobiliarias",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "propiedade-crm",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "property_id",
+              "lookupValue": "={{ $json.property_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        -192
+      ],
+      "id": "67663476-35a3-4e6c-9977-886fa670e1c3",
+      "name": "Get row(s) in sheet",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "brlgpJUp82pkG28u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a9725886-7a4f-4c30-bc3f-e63eb050f74e",
+              "leftValue": "={{ $json.row_number || '' }}",
+              "rightValue": "=={{ $('Code in JavaScript').item.json.property_id || '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        880,
+        -192
+      ],
+      "id": "da86cd53-c3cc-4b65-9d11-e006440b66db",
+      "name": "If",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA",
+          "mode": "list",
+          "cachedResultName": "demo-inmobiliarias",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "propiedade-crm",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "property_id": "={{ $('Code in JavaScript').item.json.property_id }}",
+            "property_name": "={{ $('Code in JavaScript').item.json.property_name }}",
+            "property_type": "={{ $('Code in JavaScript').item.json.property_type }}",
+            "operation_type": "={{ $('Code in JavaScript').item.json.operation_type }}",
+            "property_status": "={{ $('Code in JavaScript').item.json.property_status }}",
+            "state": "={{ $('Code in JavaScript').item.json.state }}",
+            "city": "={{ $('Code in JavaScript').item.json.city }}",
+            "zone": "={{ $('Code in JavaScript').item.json.zone }}",
+            "address": "={{ $('Code in JavaScript').item.json.address }}",
+            "maps_url": "={{ $('Code in JavaScript').item.json.maps_url }}",
+            "price": "={{ $('Code in JavaScript').item.json.price }}",
+            "currency": "={{ $('Code in JavaScript').item.json.currency }}",
+            "land_area_m2": "={{ $('Code in JavaScript').item.json.land_area_m2 }}",
+            "construction_area_m2": "={{ $('Code in JavaScript').item.json.construction_area_m2 }}",
+            "frontage_m": "={{ $('Code in JavaScript').item.json.frontage_m }}",
+            "depth_m": "={{ $('Code in JavaScript').item.json.depth_m }}",
+            "bedrooms": "={{ $('Code in JavaScript').item.json.bedrooms }}",
+            "bathrooms": "={{ $('Code in JavaScript').item.json.bathrooms }}",
+            "half_bathrooms": "={{ $('Code in JavaScript').item.json.half_bathrooms }}",
+            "parking_spaces": "={{ $('Code in JavaScript').item.json.parking_spaces }}",
+            "short_description": "={{ $('Code in JavaScript').item.json.short_description }}",
+            "full_description": "={{ $('Code in JavaScript').item.json.full_description }}",
+            "amenities": "={{ $('Code in JavaScript').item.json.amenities }}",
+            "other_amenities": "={{ $('Code in JavaScript').item.json.other_amenities }}",
+            "virtual_tour_url": "={{ $('Code in JavaScript').item.json.virtual_tour_url }}",
+            "advisor_name": "={{ $('Code in JavaScript').item.json.advisor_name }}",
+            "contact_phone": "={{ $('Code in JavaScript').item.json.contact_phone }}",
+            "internal_notes": "={{ $('Code in JavaScript').item.json.internal_notes }}",
+            "created_at": "={{ $('Code in JavaScript').item.json.created_at }}",
+            "updated_at": "={{ $('Code in JavaScript').item.json.updated_at }}",
+            "main_image_url": "={{ $('Code in JavaScript').item.json.main_image_url }}",
+            "gallery_urls": "={{ $('Code in JavaScript').item.json.gallery_urls }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "property_id",
+              "displayName": "property_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "property_name",
+              "displayName": "property_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "property_type",
+              "displayName": "property_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "operation_type",
+              "displayName": "operation_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "property_status",
+              "displayName": "property_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "zone",
+              "displayName": "zone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "maps_url",
+              "displayName": "maps_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "land_area_m2",
+              "displayName": "land_area_m2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "construction_area_m2",
+              "displayName": "construction_area_m2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "frontage_m",
+              "displayName": "frontage_m",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "depth_m",
+              "displayName": "depth_m",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bedrooms",
+              "displayName": "bedrooms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bathrooms",
+              "displayName": "bathrooms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "half_bathrooms",
+              "displayName": "half_bathrooms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "parking_spaces",
+              "displayName": "parking_spaces",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "short_description",
+              "displayName": "short_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "full_description",
+              "displayName": "full_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "amenities",
+              "displayName": "amenities",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "other_amenities",
+              "displayName": "other_amenities",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "virtual_tour_url",
+              "displayName": "virtual_tour_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "advisor_name",
+              "displayName": "advisor_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contact_phone",
+              "displayName": "contact_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "internal_notes",
+              "displayName": "internal_notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "main_image_url",
+              "displayName": "main_image_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "gallery_urls",
+              "displayName": "gallery_urls",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1088,
+        -96
+      ],
+      "id": "b78f2ae3-7ea7-4513-a26a-92712234b1b5",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "brlgpJUp82pkG28u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA",
+          "mode": "list",
+          "cachedResultName": "demo-inmobiliarias",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "propiedade-crm",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "property_id": "={{ $('Code in JavaScript').item.json.property_id }}",
+            "property_name": "={{ $('Code in JavaScript').item.json.property_name }}",
+            "property_type": "={{ $('Code in JavaScript').item.json.property_type }}",
+            "operation_type": "={{ $('Code in JavaScript').item.json.operation_type }}",
+            "property_status": "={{ $('Code in JavaScript').item.json.property_status }}",
+            "state": "={{ $('Code in JavaScript').item.json.state }}",
+            "city": "={{ $('Code in JavaScript').item.json.city }}",
+            "zone": "={{ $('Code in JavaScript').item.json.zone }}",
+            "address": "={{ $('Code in JavaScript').item.json.address }}",
+            "maps_url": "={{ $('Code in JavaScript').item.json.maps_url }}",
+            "price": "={{ $('Code in JavaScript').item.json.price }}",
+            "currency": "={{ $('Code in JavaScript').item.json.currency }}",
+            "land_area_m2": "={{ $('Code in JavaScript').item.json.land_area_m2 }}",
+            "construction_area_m2": "={{ $('Code in JavaScript').item.json.construction_area_m2 }}",
+            "frontage_m": "={{ $('Code in JavaScript').item.json.frontage_m }}",
+            "depth_m": "={{ $('Code in JavaScript').item.json.depth_m }}",
+            "bedrooms": "={{ $('Code in JavaScript').item.json.bedrooms }}",
+            "bathrooms": "={{ $('Code in JavaScript').item.json.bathrooms }}",
+            "half_bathrooms": "={{ $('Code in JavaScript').item.json.half_bathrooms }}",
+            "parking_spaces": "={{ $('Code in JavaScript').item.json.parking_spaces }}",
+            "short_description": "={{ $('Code in JavaScript').item.json.short_description }}",
+            "full_description": "={{ $('Code in JavaScript').item.json.full_description }}",
+            "amenities": "={{ $('Code in JavaScript').item.json.amenities }}",
+            "other_amenities": "={{ $('Code in JavaScript').item.json.other_amenities }}",
+            "virtual_tour_url": "={{ $('Code in JavaScript').item.json.virtual_tour_url }}",
+            "advisor_name": "={{ $('Code in JavaScript').item.json.advisor_name }}",
+            "contact_phone": "={{ $('Code in JavaScript').item.json.contact_phone }}",
+            "internal_notes": "={{ $('Code in JavaScript').item.json.internal_notes }}",
+            "created_at": "={{ $('Code in JavaScript').item.json.created_at }}",
+            "updated_at": "={{ $('Code in JavaScript').item.json.updated_at }}",
+            "main_image_url": "={{ $('Code in JavaScript').item.json.main_image_url }}",
+            "gallery_urls": "={{ $('Code in JavaScript').item.json.gallery_urls }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "property_id",
+              "displayName": "property_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "property_name",
+              "displayName": "property_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "property_type",
+              "displayName": "property_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "operation_type",
+              "displayName": "operation_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "property_status",
+              "displayName": "property_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "zone",
+              "displayName": "zone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "maps_url",
+              "displayName": "maps_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "land_area_m2",
+              "displayName": "land_area_m2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "construction_area_m2",
+              "displayName": "construction_area_m2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "frontage_m",
+              "displayName": "frontage_m",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "depth_m",
+              "displayName": "depth_m",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bedrooms",
+              "displayName": "bedrooms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bathrooms",
+              "displayName": "bathrooms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "half_bathrooms",
+              "displayName": "half_bathrooms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "parking_spaces",
+              "displayName": "parking_spaces",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "short_description",
+              "displayName": "short_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "full_description",
+              "displayName": "full_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "amenities",
+              "displayName": "amenities",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "other_amenities",
+              "displayName": "other_amenities",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "virtual_tour_url",
+              "displayName": "virtual_tour_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "advisor_name",
+              "displayName": "advisor_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contact_phone",
+              "displayName": "contact_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "internal_notes",
+              "displayName": "internal_notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "main_image_url",
+              "displayName": "main_image_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "gallery_urls",
+              "displayName": "gallery_urls",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1088,
+        -288
+      ],
+      "id": "93f2d98d-c1ae-461b-b3c7-e42aaad57870",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "brlgpJUp82pkG28u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      ok: true,\n      action: \"updated\",\n      property_id: $input.first().json.property_id\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        -288
+      ],
+      "id": "180a7f3c-571e-49d5-9499-a6fbb330435c",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      ok: true,\n      action: \"created\",\n      property_id: $input.first().json.property_id\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        -96
+      ],
+      "id": "d09c32f6-57b6-4d1d-af98-c8e76b5ce23d",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "upsert",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4b97f349-3188-44e0-ab6c-3b7cafe030d0"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "upsert"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2af4cc5e-2ad4-40cd-b6b2-8390fd116a64",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "delete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delete"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "4a41c426-dad1-43bc-a7d5-313d4aeec2b5",
+      "name": "Switch action"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA",
+          "mode": "list",
+          "cachedResultName": "demo-inmobiliarias",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "propiedade-crm",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "property_id",
+              "lookupValue": "={{ $json.property_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        592,
+        192
+      ],
+      "id": "9f85daa0-a7a0-41cd-a3b0-ebbcf9b43920",
+      "name": "Get row(s) in sheet1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "brlgpJUp82pkG28u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f54a377a-36dc-49ef-aa2c-9d131ff1579d",
+              "leftValue": "=={{ $json.row_number || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        192
+      ],
+      "id": "00c6a035-b279-4ace-97eb-e0afc651426b",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      ok: true,\n      action: \"deleted\",\n      property_id: $(\"Code in JavaScript\").first().json.property_id\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        176
+      ],
+      "id": "f066de3a-dd77-4734-8a1c-67102bdd5d47",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      ok: false,\n      action: \"not_found\",\n      property_id: $(\"Code in JavaScript\").first().json.property_id,\n      message: \"No se encontró la propiedad para eliminar.\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        432
+      ],
+      "id": "49c3236e-ff90-43f1-8faa-d1876193e457",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "value": "1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA",
+          "mode": "list",
+          "cachedResultName": "demo-inmobiliarias",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "propiedade-crm",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit#gid=0"
+        },
+        "startIndex": "={{ $json.row_number }}"
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1120,
+        176
+      ],
+      "id": "5e5230b8-796f-43fc-8c4b-eea62da02f95",
+      "name": "Delete rows or columns from sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "brlgpJUp82pkG28u",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Switch action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch action": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Delete rows or columns from sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete rows or columns from sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "82915d6284021ae316fa922b02405245da9d230ae25a4604189ab9cf7292c161"
+  }
+}
