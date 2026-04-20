@@ -1,0 +1,239 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "tipo_operacion"
+            },
+            {
+              "name": "tipo_propiedad"
+            },
+            {
+              "name": "ubicacion"
+            },
+            {
+              "name": "presupuesto_min"
+            },
+            {
+              "name": "presupuesto_max"
+            },
+            {
+              "name": "habitaciones"
+            },
+            {
+              "name": "banos"
+            },
+            {
+              "name": "tamano_min"
+            },
+            {
+              "name": "preferencias"
+            },
+            {
+              "name": "limite"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8ad74eae-ac8b-441b-983a-f64b228e3e79",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fda3d958-36a7-4160-b0fc-0f9e7353be5d",
+              "name": "tipo_operacion",
+              "value": "={{ ($json.tipo_operacion || '').toString().trim().toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "464b8d6d-7997-4372-b1e8-6a383b7e2c78",
+              "name": "tipo_propiedad",
+              "value": "={{ ($json.tipo_propiedad || '').toString().trim().toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "0f31b37c-492a-4cd4-92eb-bd5e75e84782",
+              "name": "ubicacion",
+              "value": "={{ ($json.ubicacion || '').toString().trim().toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "bb8087b4-22fb-4fe9-8bab-cecc6f475439",
+              "name": "presupuesto_min",
+              "value": "={{ ($json.presupuesto_min || '').toString().trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "c8c49eb7-2a38-4aaa-b485-888cf6e51f5f",
+              "name": "presupuesto_max",
+              "value": "={{ ($json.presupuesto_max || '').toString().trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "382d765f-8f56-46e3-8377-a402de7e0827",
+              "name": "habitaciones",
+              "value": "={{ ($json.habitaciones || '').toString().trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "c2d1dee5-0434-4bf4-a08f-00b7e029473d",
+              "name": "banos",
+              "value": "={{ ($json.banos || '').toString().trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "2ca2bccf-edbe-4de4-99aa-762e22a5df0d",
+              "name": "tamano_min",
+              "value": "={{ ($json.tamano_min || '').toString().trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "86f9b16a-4cd9-46bf-bd43-2af915f284d0",
+              "name": "preferencias",
+              "value": "={{ ($json.preferencias || '').toString().trim().toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "03df2d53-db5d-4c04-8379-2f63b59ae383",
+              "name": "limite",
+              "value": "={{ ($json.limite || '3').toString().trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": false
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "71f95147-bd19-4164-afea-a168b2936e37",
+      "name": "Criterios"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA",
+          "mode": "list",
+          "cachedResultName": "demo-inmobiliarias",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "propiedade-crm",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YrUb6Or1yWcYsoTTLvOa1UxxafoaYkvaGLHHliz1juA/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        416,
+        0
+      ],
+      "id": "72510485-d037-47cf-ae02-9da561ec861a",
+      "name": "Leer Propiedades",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "brlgpJUp82pkG28u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function normalizeText(v) {\n  return (v ?? '')\n    .toString()\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .replace(/[_-]+/g, ' ')\n    .toLowerCase()\n    .trim();\n}\n\nfunction toNumber(v) {\n  if (v === null || v === undefined || v === '') return null;\n  const cleaned = v.toString().replace(/[^0-9.]/g, '');\n  if (!cleaned) return null;\n  const num = Number(cleaned);\n  return Number.isFinite(num) ? num : null;\n}\n\nfunction getField(row, aliases) {\n  for (const key of Object.keys(row)) {\n    const nk = normalizeText(key);\n    if (aliases.includes(nk)) return row[key];\n  }\n  return null;\n}\n\nfunction includesEither(a, b) {\n  if (!a || !b) return false;\n  return a.includes(b) || b.includes(a);\n}\n\nfunction hasWordMatch(needle, haystack) {\n  if (!needle || !haystack) return false;\n  const words = needle.split(/\\s+/).filter(Boolean);\n  return words.some((w) => haystack.includes(w));\n}\n\nfunction normalizeOperation(v) {\n  const t = normalizeText(v);\n\n  if (!t) return '';\n\n  if (\n    t.includes('compra') ||\n    t.includes('comprar') ||\n    t.includes('venta') ||\n    t.includes('vender')\n  ) {\n    return 'venta';\n  }\n\n  if (\n    t.includes('renta') ||\n    t.includes('rentar') ||\n    t.includes('alquiler') ||\n    t.includes('alquilar') ||\n    t.includes('arrendamiento')\n  ) {\n    return 'renta';\n  }\n\n  if (t.includes('traspaso')) return 'traspaso';\n\n  return t;\n}\n\nfunction normalizePropertyType(v) {\n  const t = normalizeText(v);\n\n  if (!t) return '';\n\n  if (t.includes('casa')) return 'casa';\n\n  if (\n    t.includes('departamento') ||\n    t.includes('depto') ||\n    t.includes('apartamento') ||\n    t.includes('apartment') ||\n    t.includes('piso')\n  ) {\n    return 'departamento';\n  }\n\n  if (t.includes('terreno') || t.includes('lote')) return 'terreno';\n  if (t.includes('local')) return 'local';\n  if (t.includes('oficina')) return 'oficina';\n  if (t.includes('bodega')) return 'bodega';\n\n  return t;\n}\n\nfunction wantsParking(preferencias, rawText) {\n  const joined = normalizeText(`${preferencias || ''} ${rawText || ''}`);\n  return (\n    joined.includes('cochera') ||\n    joined.includes('garage') ||\n    joined.includes('garaje') ||\n    joined.includes('estacionamiento') ||\n    joined.includes('parking')\n  );\n}\n\nconst criteria = $('Criterios').first().json;\n\nconst tipoOperacion = normalizeOperation(criteria.tipo_operacion);\nconst tipoPropiedad = normalizePropertyType(criteria.tipo_propiedad);\nconst ubicacion = normalizeText(criteria.ubicacion);\nconst presupuestoMin = toNumber(criteria.presupuesto_min);\nconst presupuestoMax = toNumber(criteria.presupuesto_max);\nconst habitaciones = toNumber(criteria.habitaciones);\nconst banos = toNumber(criteria.banos);\nconst tamanoMin = toNumber(criteria.tamano_min);\nconst preferencias = normalizeText(criteria.preferencias);\nconst limite = Math.min(Math.max(parseInt(criteria.limite || '3', 10) || 3, 1), 8);\n\nconst parkingRequested = wantsParking(criteria.preferencias, JSON.stringify(criteria));\n\nconst rows = $input.all().map(i => i.json);\n\nconst results = rows.map((row) => {\n  const operacion = normalizeOperation(getField(row, [\n    'tipo de operacion',\n    'operacion',\n    'venta renta',\n    'tipo operacion',\n    'operation type'\n  ]));\n\n  const propiedad = normalizePropertyType(getField(row, [\n    'tipo de propiedad',\n    'tipo propiedad',\n    'propiedad',\n    'categoria',\n    'property type'\n  ]));\n\n  const zona = normalizeText([\n    getField(row, ['ubicacion', 'zona', 'address']),\n    getField(row, ['city']),\n    getField(row, ['state']),\n    getField(row, ['zone'])\n  ].filter(Boolean).join(' '));\n\n  const precio = toNumber(getField(row, [\n    'precio',\n    'precio venta',\n    'precio renta',\n    'costo',\n    'price'\n  ]));\n\n  const recamaras = toNumber(getField(row, [\n    'habitaciones',\n    'recamaras',\n    'num habitaciones',\n    'bedrooms'\n  ]));\n\n  const banosRow = toNumber(getField(row, [\n    'banos',\n    'baños',\n    'num banos',\n    'num baños',\n    'bathrooms'\n  ]));\n\n  const tamano = toNumber(\n    getField(row, [\n      'tamano',\n      'tamaño',\n      'm2',\n      'm²',\n      'superficie',\n      'construction area m2',\n      'land area m2'\n    ])\n  );\n\n  const parkingSpaces = toNumber(getField(row, [\n    'parking spaces',\n    'lugares de autos',\n    'cochera',\n    'garage'\n  ]));\n\n  const extras = normalizeText([\n    getField(row, ['preferencias adicionales', 'extras', 'amenities', 'other amenities']),\n    getField(row, ['virtual tour url']),\n    parkingSpaces && parkingSpaces > 0 ? 'cochera estacionamiento garage parking' : ''\n  ].filter(Boolean).join(' '));\n\n  const nombre = getField(row, [\n    'nombre',\n    'nombre propiedad',\n    'titulo',\n    'propiedad',\n    'property name'\n  ]) || 'Propiedad sin nombre';\n\n  const direccion = getField(row, [\n    'direccion',\n    'address',\n    'ubicacion',\n    'zona'\n  ]) || '';\n\n  const estatusPropiedad = normalizeText(getField(row, [\n    'property status',\n    'estatus',\n    'estado',\n    'status',\n    'property_status'\n  ]));\n\n  // =========================\n  // FILTROS DUROS\n  // =========================\n\n  if (\n    estatusPropiedad &&\n    (\n      estatusPropiedad.includes('vendida') ||\n      estatusPropiedad.includes('rentada') ||\n      estatusPropiedad.includes('inactiva') ||\n      estatusPropiedad.includes('ocupada') ||\n      estatusPropiedad.includes('archivada')\n    )\n  ) {\n    return null;\n  }\n\n  if (tipoOperacion && operacion && operacion !== tipoOperacion) {\n    return null;\n  }\n\n  if (tipoPropiedad && propiedad && propiedad !== tipoPropiedad) {\n    return null;\n  }\n\n  if (ubicacion && zona) {\n    const ubicacionOk =\n      includesEither(zona, ubicacion) ||\n      hasWordMatch(ubicacion, zona);\n\n    if (!ubicacionOk) {\n      return null;\n    }\n  }\n\n  if (presupuestoMax !== null && precio !== null && precio > presupuestoMax * 1.25) {\n    return null;\n  }\n\n  // =========================\n  // SCORING\n  // =========================\n\n  let score = 0;\n  let reasons = [];\n\n  if (tipoOperacion && operacion && operacion === tipoOperacion) {\n    score += 30;\n    reasons.push('coincide en operacion');\n  }\n\n  if (tipoPropiedad && propiedad && propiedad === tipoPropiedad) {\n    score += 25;\n    reasons.push('coincide en tipo');\n  }\n\n  if (ubicacion && zona) {\n    if (includesEither(zona, ubicacion)) {\n      score += 25;\n      reasons.push('coincide en ubicacion');\n    } else if (hasWordMatch(ubicacion, zona)) {\n      score += 12;\n      reasons.push('ubicacion cercana');\n    }\n  }\n\n  if (presupuestoMin !== null && precio !== null && precio >= presupuestoMin) {\n    score += 5;\n  }\n\n  if (presupuestoMax !== null && precio !== null) {\n    if (precio <= presupuestoMax) {\n      score += 15;\n      reasons.push('dentro de presupuesto');\n    } else if (precio <= presupuestoMax * 1.1) {\n      score += 7;\n      reasons.push('ligeramente arriba del presupuesto');\n    }\n  }\n\n  if (habitaciones !== null && recamaras !== null) {\n    if (recamaras >= habitaciones) {\n      score += 8;\n      reasons.push('cumple habitaciones');\n    } else if (recamaras === habitaciones - 1) {\n      score += 3;\n      reasons.push('casi cumple habitaciones');\n    }\n  }\n\n  if (banos !== null && banosRow !== null) {\n    if (banosRow >= banos) {\n      score += 6;\n      reasons.push('cumple banos');\n    }\n  }\n\n  if (tamanoMin !== null && tamano !== null) {\n    if (tamano >= tamanoMin) {\n      score += 6;\n      reasons.push('cumple tamano');\n    }\n  }\n\n  if (parkingRequested) {\n    if (parkingSpaces !== null && parkingSpaces > 0) {\n      score += 8;\n      reasons.push('cumple cochera');\n    }\n  }\n\n  if (preferencias && extras) {\n    const prefWords = preferencias.split(/,|\\s+/).map(s => s.trim()).filter(Boolean);\n    const hits = prefWords.filter(p => extras.includes(p));\n    if (hits.length) {\n      score += Math.min(hits.length * 4, 12);\n      reasons.push('cumple preferencias');\n    }\n  }\n\n  return {\n    ...row,\n    _score: score,\n    _match_reasons: reasons.join(', '),\n    _nombre: nombre,\n    _direccion: direccion,\n    _precio: precio,\n    _zona: zona,\n    _tipo_propiedad: propiedad,\n    _operacion: operacion\n  };\n})\n.filter(r => r && r._score > 0)\n.sort((a, b) => b._score - a._score)\n.slice(0, limite);\n\nif (!results.length) {\n  return [{\n    json: {\n      total_resultados: 0,\n      propiedades: [],\n      mensaje: 'No se encontraron coincidencias con los criterios actuales'\n    }\n  }];\n}\n\nreturn results.map(r => ({\n  json: {\n    nombre: r._nombre,\n    direccion: r._direccion,\n    zona: r._zona,\n    precio: r._precio,\n    tipo_propiedad: r._tipo_propiedad,\n    operacion: r._operacion,\n    score: r._score,\n    razones: r._match_reasons\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "feff5883-c30f-47b4-8af1-d6bf264e00e4",
+      "name": "Filtrar Propiedades"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map(i => i.json);\n\nif (\n  items.length === 1 &&\n  Object.prototype.hasOwnProperty.call(items[0], 'total_resultados') &&\n  Object.prototype.hasOwnProperty.call(items[0], 'propiedades')\n) {\n  return [{ json: items[0] }];\n}\n\nreturn [{\n  json: {\n    total_resultados: items.length,\n    propiedades: items\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "1672a154-5216-493a-bb04-532d1474d8f6",
+      "name": "Salida"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Criterios",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criterios": {
+      "main": [
+        [
+          {
+            "node": "Leer Propiedades",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Propiedades": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Propiedades",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Propiedades": {
+      "main": [
+        [
+          {
+            "node": "Salida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "82915d6284021ae316fa922b02405245da9d230ae25a4604189ab9cf7292c161"
+  }
+}
